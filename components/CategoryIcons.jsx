@@ -53,10 +53,10 @@ const categoryPhotoItems = [
     image: "/images/shorts.png",
     link: "/products",
   },
-  {
-    name: "Shoe",
-    tag: "High-Top Kicks",
-    image: "/images/shoe.png",
+   {
+    name: "Co-ord set",
+    tag: "Matching Sets",
+    image: "/images/coord.png",
     link: "/products",
   },
   {
@@ -65,6 +65,13 @@ const categoryPhotoItems = [
     image: "/images/cap.png",
     link: "/products",
   },
+  {
+    name: "Shoe",
+    tag: "High-Top Kicks",
+    image: "/images/shoe.png",
+    link: "/products",
+  },
+  
   {
     name: "Watch",
     tag: "Timepieces",
@@ -95,12 +102,7 @@ const categoryPhotoItems = [
     image: "/images/access.png",
     link: "/products",
   },
-  {
-    name: "Co-ord set",
-    tag: "Matching Sets",
-    image: "/images/coord.png",
-    link: "/products",
-  },
+ 
 ];
 
 export default function CategoryIcons() {
