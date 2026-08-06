@@ -1,28 +1,29 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FiArrowRight } from "react-icons/fi";
 import ScrollReveal from "./ScrollReveal";
 
 export default function Categories() {
   const categories = [
     {
-      title: "Oversized Tees & Tops",
-      image: "/images/mens.jpg",
-      tag: "Top Rated Drop",
+      title: "T-Shirt",
+      image: "/images/boxy.jpg",
+      tag: "Oversized Tees",
     },
     {
-      title: "Hoodies & Sweatshirts",
+      title: "Hoodies",
       image: "/images/hoodies.jpg",
       tag: "Heavyweight Fleece",
     },
     {
-      title: "Cargo Pants & Denim",
+      title: "Track Pant",
       image: "/images/cargo.jpg",
-      tag: "Street Silhouettes",
+      tag: "Street Pants",
     },
     {
-      title: "Jackets",
+      title: "Jacket",
       image: "/images/jaacket.jpg",
       tag: "Urban Outerwear",
     },
@@ -33,7 +34,7 @@ export default function Categories() {
       {/* Heading */}
       <ScrollReveal direction="up">
         <div className="mb-8 sm:mb-12">
-          <p className="uppercase tracking-[4px] sm:tracking-[5px] text-xs text-gray-500 mb-2">
+          <p className="uppercase tracking-[4px] sm:tracking-[5px] text-xs text-gray-500 mb-2 font-semibold">
             Explore Collection
           </p>
 
@@ -46,7 +47,10 @@ export default function Categories() {
       <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
         {/* LEFT */}
         <ScrollReveal direction="right" delay={150}>
-          <div className="group cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+          <Link
+            href="/products"
+            className="group block cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+          >
             <div className="relative h-[280px] sm:h-[420px] lg:h-[620px] overflow-hidden">
               <Image
                 src={categories[0].image}
@@ -60,20 +64,20 @@ export default function Categories() {
 
               <div className="absolute bottom-5 sm:bottom-8 left-5 sm:left-8 text-white">
                 <p className="uppercase tracking-[3px] text-[10px] sm:text-xs opacity-80 font-medium">
-                  New Collection
+                  {categories[0].tag}
                 </p>
 
                 <h3 className="text-xl sm:text-4xl font-black mt-1.5 sm:mt-2">
                   {categories[0].title}
                 </h3>
 
-                <button className="mt-3 sm:mt-6 flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold hover:bg-black hover:text-white transition-all duration-300 shadow-md">
+                <span className="mt-3 sm:mt-6 inline-flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold group-hover:bg-black group-hover:text-white transition-all duration-300 shadow-md">
                   Explore
                   <FiArrowRight />
-                </button>
+                </span>
               </div>
             </div>
-          </div>
+          </Link>
         </ScrollReveal>
 
         {/* RIGHT */}
@@ -84,7 +88,10 @@ export default function Categories() {
               direction="left"
               delay={250 + index * 150}
             >
-              <div className="group cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+              <Link
+                href="/products"
+                className="group block cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+              >
                 <div className="relative h-[190px] sm:h-[250px] lg:h-[295px] overflow-hidden">
                   <Image
                     src={item.image}
@@ -97,17 +104,20 @@ export default function Categories() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10 group-hover:bg-black/25 transition duration-500" />
 
                   <div className="absolute bottom-5 sm:bottom-6 left-5 sm:left-6 text-white">
+                    <p className="uppercase tracking-[3px] text-[10px] sm:text-xs opacity-80 font-medium mb-1">
+                      {item.tag}
+                    </p>
                     <h3 className="text-xl sm:text-3xl font-black">
                       {item.title}
                     </h3>
 
-                    <button className="mt-3 sm:mt-4 flex items-center gap-2 bg-white text-black px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold hover:bg-black hover:text-white transition-all duration-300 shadow-md">
+                    <span className="mt-3 sm:mt-4 inline-flex items-center gap-2 bg-white text-black px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold group-hover:bg-black group-hover:text-white transition-all duration-300 shadow-md">
                       Explore
                       <FiArrowRight />
-                    </button>
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             </ScrollReveal>
           ))}
         </div>

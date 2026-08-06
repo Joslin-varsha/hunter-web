@@ -47,15 +47,14 @@ export default function Hero() {
   }, [nextSlide, isPaused]);
 
   return (
-    <section className="w-full pt-1 pb-0">
-      {/* Main Hero Card Container */}
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-        <ScrollReveal direction="scale" delay={100}>
-          <div
-            className="relative w-full h-[calc(100vh-160px)] min-h-[480px] sm:min-h-[550px] max-h-[780px] rounded-[24px] sm:rounded-[36px] overflow-hidden bg-gray-900 shadow-xl group"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
+    <section className="w-full pt-0 pb-0 overflow-hidden">
+      {/* Full-Width Edge-to-Edge Hero Banner */}
+      <div className="w-full">
+        <div
+          className="relative w-full h-[calc(100dvh-120px)] sm:h-[calc(100vh-132px)] min-h-[380px] max-h-[780px] overflow-hidden bg-gray-900 group"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
             {/* Background Image Slides */}
             {slides.map((slide, index) => (
               <div
@@ -128,12 +127,11 @@ export default function Hero() {
               ))}
             </div>
           </div>
-        </ScrollReveal>
-      </div>
+        </div>
 
       {/* Edge-to-Edge Full Width Marquee Ticker Bar */}
-      <div className="mt-2 w-full bg-[#111111] text-white py-4 px-0 overflow-hidden shadow-sm border-y border-black">
-        <div className="animate-marquee flex items-center gap-20 whitespace-nowrap text-[12px] sm:text-xs font-semibold tracking-widest uppercase">
+      <div className="w-full bg-[#111111] text-white py-3 px-0 overflow-hidden shadow-sm border-t border-black">
+        <div className="animate-marquee flex items-center gap-20 whitespace-nowrap text-[11px] sm:text-xs font-semibold tracking-widest uppercase">
           {marqueeItems.map((text, idx) => (
             <span key={idx} className="flex items-center gap-20">
               <span>{text}</span>

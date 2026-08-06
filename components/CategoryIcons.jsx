@@ -8,80 +8,104 @@ const categoryPhotoItems = [
   {
     name: "T-Shirt",
     tag: "Oversized Tees",
-    image: "/images/boxy.jpg",
+    image: "/images/tshirt.png",
     link: "/products",
   },
-   {
+  {
     name: "Jean",
     tag: "Vintage Denim",
-    image: "/images/denim.jpg",
-    link: "/products",
-  },
-  {
-    name: "Track Pant",
-    tag: "Street Pants",
-    image: "/images/utility.jpg",
-    link: "/products",
-  },
-   {
-    name: "Jacket",
-    tag: "Urban Outerwear",
-    image: "/images/bomber.jpg",
-    link: "/products",
-  },
-  {
-    name: "Pant",
-    tag: "Cargo & Utility",
-    image: "/images/cargoo.jpg",
-    link: "/products",
-  },
-  {
-    name: "Shorts",
-    tag: "Summer Fits",
-    image: "/images/shortss.jpg",
+    image: "/images/jean.png",
     link: "/products",
   },
   {
     name: "Shirt",
     tag: "Rugby & Polos",
-    image: "/images/polo.jpg",
+    image: "/images/shirt.png",
     link: "/products",
   },
   {
     name: "Hoodies",
     tag: "Heavy Fleece",
-    image: "/images/hoodie.jpg",
+    image: "/images/hoodiee.png",
     link: "/products",
   },
   {
-    name: "Cap",
-    tag: "Caps & Beanies",
-    image: "/images/tactical.jpg",
+    name: "Track Pant",
+    tag: "Street Pants",
+    image: "/images/track.png",
     link: "/products",
   },
   {
-    name: "Accessories",
-    tag: "Urban Extras",
-    image: "/images/acidd.jpg",
+    name: "Jacket",
+    tag: "Urban Outerwear",
+    image: "/images/jacket.png",
+    link: "/products",
+  },
+  {
+    name: "Pant",
+    tag: "Cargo & Utility",
+    image: "/images/pant.png",
+    link: "/products",
+  },
+  {
+    name: "Shorts",
+    tag: "Summer Fits",
+    image: "/images/shorts.png",
     link: "/products",
   },
   {
     name: "Shoe",
     tag: "High-Top Kicks",
-    image: "/images/mens.jpg",
+    image: "/images/shoe.png",
+    link: "/products",
+  },
+  {
+    name: "Cap",
+    tag: "Caps & Beanies",
+    image: "/images/cap.png",
+    link: "/products",
+  },
+  {
+    name: "Watch",
+    tag: "Timepieces",
+    image: "/images/watch.png",
+    link: "/products",
+  },
+  {
+    name: "Perfume",
+    tag: "Fragrance",
+    image: "/images/perfume.png",
+    link: "/products",
+  },
+  {
+    name: "Specs",
+    tag: "Eyewear",
+    image: "/images/specs.png",
+    link: "/products",
+  },
+  {
+    name: "Wallet",
+    tag: "Leather Goods",
+    image: "/images/wallet.png",
+    link: "/products",
+  },
+  {
+    name: "Accessories",
+    tag: "Urban Extras",
+    image: "/images/access.png",
     link: "/products",
   },
   {
     name: "Co-ord set",
     tag: "Matching Sets",
-    image: "/images/painted.jpg",
+    image: "/images/coord.png",
     link: "/products",
   },
 ];
 
 export default function CategoryIcons() {
   return (
-    <section className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+    <section className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 overflow-hidden">
       <ScrollReveal direction="up">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8">

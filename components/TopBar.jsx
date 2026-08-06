@@ -4,8 +4,8 @@ export default function TopBar() {
   );
 
   return (
-    <div className="bg-[#111111] text-white py-3 overflow-hidden">
-      <div className="animate-marquee flex items-center gap-16 whitespace-nowrap text-xs md:text-sm font-semibold tracking-[2px] uppercase">
+    <div className="bg-[#111111] text-white py-2 sm:py-3 overflow-hidden">
+      <div className="animate-marquee flex items-center gap-16 whitespace-nowrap text-[11px] sm:text-xs font-semibold tracking-[2px] uppercase">
         {items.map((text, index) => (
           <span key={index} className="flex items-center gap-16">
             <span>{text}</span>
