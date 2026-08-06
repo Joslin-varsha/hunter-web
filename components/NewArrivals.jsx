@@ -95,15 +95,15 @@ export default function NewArrivals() {
         </div>
       </ScrollReveal>
 
-      {/* Products */}
-      <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 overflow-x-auto sm:overflow-visible pb-4 sm:pb-0 snap-x snap-mandatory scrollbar-none">
+      {/* 2-Column Mobile & 4-Column Desktop Product Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {newArrivalProducts.map((item, idx) => (
           <ScrollReveal
             key={item.id}
             direction="up"
-            delay={150 * (idx + 1)}
+            delay={100 * (idx + 1)}
           >
-            <div className="group cursor-pointer flex flex-col min-w-[260px] sm:min-w-0 flex-shrink-0 snap-start rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl">
+            <div className="group cursor-pointer flex flex-col rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl">
 
               {/* Image */}
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[#f6f6f6]">

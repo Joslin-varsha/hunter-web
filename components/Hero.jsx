@@ -9,14 +9,17 @@ const slides = [
   {
     id: 1,
     image: "/images/hero2.png",
+    imageMobile: "/images/hero22.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile1.png")
   },
   {
     id: 2,
     image: "/images/hero1.png",
+    imageMobile: "/images/hero11.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile2.png")
   },
   {
     id: 3,
     image: "/images/heroo.png",
+    imageMobile: "/images/herooo.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile3.png")
   },
 ];
 
@@ -61,13 +64,24 @@ export default function Hero() {
                   index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
                 }`}
               >
+                {/* Desktop View Image */}
                 <Image
                   src={slide.image}
-                  alt={`Hero Slide ${slide.id}`}
+                  alt={`Hero Slide Desktop ${slide.id}`}
                   fill
                   priority={index === 0}
                   sizes="(max-width: 1400px) 100vw, 1400px"
-                  className="object-cover object-center animate-hero-zoom"
+                  className="hidden sm:block object-cover object-center animate-hero-zoom"
+                />
+
+                {/* Mobile View Image */}
+                <Image
+                  src={slide.imageMobile || slide.image}
+                  alt={`Hero Slide Mobile ${slide.id}`}
+                  fill
+                  priority={index === 0}
+                  sizes="100vw"
+                  className="sm:hidden object-cover object-center animate-hero-zoom"
                 />
               </div>
             ))}

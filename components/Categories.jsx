@@ -47,7 +47,7 @@ export default function Categories() {
         {/* LEFT */}
         <ScrollReveal direction="right" delay={150}>
           <div className="group cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-            <div className="relative h-[360px] sm:h-[480px] lg:h-[620px] overflow-hidden">
+            <div className="relative h-[280px] sm:h-[420px] lg:h-[620px] overflow-hidden">
               <Image
                 src={categories[0].image}
                 alt={categories[0].title}
@@ -58,16 +58,16 @@ export default function Categories() {
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10 group-hover:bg-black/25 transition duration-500" />
 
-              <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 text-white">
+              <div className="absolute bottom-5 sm:bottom-8 left-5 sm:left-8 text-white">
                 <p className="uppercase tracking-[3px] text-[10px] sm:text-xs opacity-80 font-medium">
                   New Collection
                 </p>
 
-                <h3 className="text-2xl sm:text-4xl font-black mt-1.5 sm:mt-2">
+                <h3 className="text-xl sm:text-4xl font-black mt-1.5 sm:mt-2">
                   {categories[0].title}
                 </h3>
 
-                <button className="mt-4 sm:mt-6 flex items-center gap-2 bg-white text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold hover:bg-black hover:text-white transition-all duration-300 shadow-md">
+                <button className="mt-3 sm:mt-6 flex items-center gap-2 bg-white text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold hover:bg-black hover:text-white transition-all duration-300 shadow-md">
                   Explore
                   <FiArrowRight />
                 </button>
@@ -77,7 +77,7 @@ export default function Categories() {
         </ScrollReveal>
 
         {/* RIGHT */}
-        <div className="flex flex-col gap-6 sm:gap-8">
+        <div className="flex flex-col gap-4 sm:gap-8">
           {categories.slice(1).map((item, index) => (
             <ScrollReveal
               key={item.title}
@@ -85,7 +85,7 @@ export default function Categories() {
               delay={250 + index * 150}
             >
               <div className="group cursor-pointer rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-                <div className="relative h-[220px] sm:h-[260px] lg:h-[295px] overflow-hidden">
+                <div className="relative h-[190px] sm:h-[250px] lg:h-[295px] overflow-hidden">
                   <Image
                     src={item.image}
                     alt={item.title}

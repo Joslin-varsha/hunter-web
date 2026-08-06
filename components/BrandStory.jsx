@@ -81,6 +81,13 @@ export default function BrandStory() {
         </ScrollReveal>
 
       </div>
+
+      {/* Mobile Copyright Line (above bottom nav) */}
+      <div className="mt-10 pt-6 border-t border-gray-100 text-center lg:hidden">
+        <p className="text-xs font-semibold text-gray-400 tracking-wider">
+          © 2026 HUNTER MEN'S WEAR. All rights reserved.
+        </p>
+      </div>
     </section>
   );
 }

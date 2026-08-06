@@ -1,0 +1,140 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import ScrollReveal from "./ScrollReveal";
+
+const categoryPhotoItems = [
+  {
+    name: "T-Shirt",
+    tag: "Oversized Tees",
+    image: "/images/boxy.jpg",
+    link: "/products",
+  },
+   {
+    name: "Jean",
+    tag: "Vintage Denim",
+    image: "/images/denim.jpg",
+    link: "/products",
+  },
+  {
+    name: "Track Pant",
+    tag: "Street Pants",
+    image: "/images/utility.jpg",
+    link: "/products",
+  },
+   {
+    name: "Jacket",
+    tag: "Urban Outerwear",
+    image: "/images/bomber.jpg",
+    link: "/products",
+  },
+  {
+    name: "Pant",
+    tag: "Cargo & Utility",
+    image: "/images/cargoo.jpg",
+    link: "/products",
+  },
+  {
+    name: "Shorts",
+    tag: "Summer Fits",
+    image: "/images/shortss.jpg",
+    link: "/products",
+  },
+  {
+    name: "Shirt",
+    tag: "Rugby & Polos",
+    image: "/images/polo.jpg",
+    link: "/products",
+  },
+  {
+    name: "Hoodies",
+    tag: "Heavy Fleece",
+    image: "/images/hoodie.jpg",
+    link: "/products",
+  },
+  {
+    name: "Cap",
+    tag: "Caps & Beanies",
+    image: "/images/tactical.jpg",
+    link: "/products",
+  },
+  {
+    name: "Accessories",
+    tag: "Urban Extras",
+    image: "/images/acidd.jpg",
+    link: "/products",
+  },
+  {
+    name: "Shoe",
+    tag: "High-Top Kicks",
+    image: "/images/mens.jpg",
+    link: "/products",
+  },
+  {
+    name: "Co-ord set",
+    tag: "Matching Sets",
+    image: "/images/painted.jpg",
+    link: "/products",
+  },
+];
+
+export default function CategoryIcons() {
+  return (
+    <section className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8">
+      <ScrollReveal direction="up">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <div>
+            <p className="uppercase tracking-[4px] sm:tracking-[5px] text-xs text-gray-500 mb-1 font-semibold">
+              Explore By Style
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-black">
+              Product Categories
+            </h2>
+          </div>
+
+          <Link
+            href="/products"
+            className="group flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-600 hover:text-black uppercase tracking-[2px] transition"
+          >
+            <span>View All</span>
+            <span className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
+
+        {/* Circular Photo Category Badges - Horizontal Touch Scroll */}
+        <div className="flex items-center gap-4 sm:gap-7 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+          {categoryPhotoItems.map((cat) => (
+            <Link
+              key={cat.name}
+              href={cat.link}
+              className="group flex flex-col items-center flex-shrink-0 snap-start cursor-pointer w-24 sm:w-32"
+            >
+              {/* Fully Rounded Circle Photo Container */}
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-black transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:scale-105">
+                <Image
+                  src={cat.image}
+                  alt={cat.name}
+                  fill
+                  sizes="(max-width: 640px) 96px, 128px"
+                  className="object-cover object-center transition-transform duration-700 group-hover:scale-115"
+                />
+
+                {/* Subtle Hover Dark Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition duration-300" />
+              </div>
+
+              {/* Category Label */}
+              <span className="mt-2.5 text-xs sm:text-sm font-black tracking-wide text-gray-900 group-hover:text-black transition uppercase text-center line-clamp-1">
+                {cat.name}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </ScrollReveal>
+    </section>
+  );
+}

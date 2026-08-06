@@ -115,36 +115,36 @@ export default function ProductsPage() {
       </div>
 
       {/* Main Layout: Sidebar & Products Grid */}
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 pb-28 lg:pb-12">
         {/* Mobile Filter Button & Sort Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-8">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-gray-100 mb-6 sm:mb-8 sticky top-16 z-30 bg-white/95 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
             {/* Mobile Filter Trigger */}
             <button
               onClick={() => setIsMobileFilterOpen(true)}
-              className="lg:hidden flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider"
+              className="lg:hidden flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md active:scale-95 transition"
             >
               <FiFilter className="w-4 h-4" />
               Filters ({selectedCategories.length})
             </button>
 
-            <span className="text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700">
               Showing <span className="text-black font-bold">{filteredProducts.length}</span> Products
             </span>
           </div>
 
           {/* Sort Dropdown */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
             <span className="text-xs uppercase tracking-wider font-bold text-gray-500 hidden sm:inline">
               Sort By:
             </span>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-gray-100 text-black text-xs font-semibold uppercase tracking-wider px-4 py-2.5 pr-8 rounded-full border border-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-black/10"
+                className="w-full sm:w-auto appearance-none bg-gray-100 text-black text-xs font-semibold uppercase tracking-wider px-4 py-2.5 pr-8 rounded-full border border-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-black/10"
               >
-                <option value="featured">Featured</option>
+                <option value="featured">Sort: Featured</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
                 <option value="rating">Highest Rated</option>

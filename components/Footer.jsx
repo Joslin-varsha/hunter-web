@@ -3,7 +3,7 @@ import { FiInstagram, FiFacebook, FiTwitter } from "react-icons/fi";
 
 export default function Footer() {
   return (
-    <footer id="contact" className="bg-[#111111] text-white mt-8 sm:mt-12 pb-16 lg:pb-0">
+    <footer id="contact" className="bg-[#111111] text-white mt-8 sm:mt-12 hidden lg:block">
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 sm:py-12 lg:py-16">
 
         {/* Top */}
