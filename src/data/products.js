@@ -234,4 +234,13 @@ export const allProducts = [
     rating: 4.5,
     tag: "Essential",
   },
+  {
+    id: 25,
+    name: "HUNTER Stealth Street Watch",
+    category: "Watch",
+    price: 145,
+    image: "/images/mens.jpg",
+    rating: 4.9,
+    tag: "Timepieces",
+  },
 ];
