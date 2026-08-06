@@ -56,8 +56,8 @@ const bestSellingProducts = [
   },
   {
     id: 8,
-    name: "Supreme Satin Applique Hooded Sweatshirt Fw24",
-    category: "T-shirts",
+    name: "Supreme Satin Applique Hooded Sweatshirt",
+    category: "Hoodies",
     price: "$150",
     image: "/images/supreme.jpg",
   },

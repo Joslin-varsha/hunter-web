@@ -49,9 +49,9 @@ const newArrivalProducts = [
   },
   {
     id: 7,
-    name: "White Striped Rugby Polo t-shirt",
-    category: "Accessories",
-    price: "$28",
+    name: "White Striped Rugby Polo Shirt",
+    category: "Shirt",
+    price: "$48",
     image: "/images/polo.jpg",
   },
   {

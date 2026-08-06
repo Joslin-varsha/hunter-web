@@ -15,7 +15,7 @@ export default function MobileBottomNav() {
       </Link>
 
       <Link
-        href="#products"
+        href="/products"
         className="flex flex-col items-center gap-1 text-gray-500 hover:text-black transition"
       >
         <FiGrid className="w-5 h-5 stroke-[2]" />
