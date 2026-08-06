@@ -77,16 +77,16 @@ export default function ProductsPage() {
       <Navbar />
 
       {/* Page Header Banner */}
-      <div className="bg-[#111111] text-white py-12 px-4 sm:px-6 lg:px-10">
-        <div className="max-w-[1550px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-[#111111] text-white py-6 sm:py-12 px-4 sm:px-6 lg:px-10">
+        <div className="max-w-[1550px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <p className="text-xs uppercase tracking-[4px] text-gray-400 font-semibold mb-2">
+            <p className="text-[10px] sm:text-xs uppercase tracking-[3px] sm:tracking-[4px] text-gray-400 font-semibold mb-1 sm:mb-2">
               HUNTER Streetwear Catalog
             </p>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight">
+            <h1 className="text-2xl sm:text-5xl font-black tracking-tight">
               SHOP ALL PRODUCTS
             </h1>
-            <p className="text-gray-400 text-sm mt-2">
+            <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2 hidden sm:block">
               Explore our full collection of premium streetwear, outerwear, and urban essentials.
             </p>
           </div>
@@ -98,7 +98,7 @@ export default function ProductsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products..."
-              className="w-full bg-[#1a1a1a] text-white placeholder-gray-500 border border-gray-700 text-sm px-4 py-3 rounded-full outline-none focus:border-white transition"
+              className="w-full bg-[#1a1a1a] text-white placeholder-gray-500 border border-gray-700 text-xs sm:text-sm px-4 py-2.5 sm:py-3 rounded-full outline-none focus:border-white transition"
             />
             {searchQuery ? (
               <button
@@ -115,34 +115,27 @@ export default function ProductsPage() {
       </div>
 
       {/* Main Layout: Sidebar & Products Grid */}
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 pb-28 lg:pb-12">
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-8 pb-28 lg:pb-12">
         {/* Mobile Filter Button & Sort Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-gray-100 mb-6 sm:mb-8 sticky top-16 z-30 bg-white/95 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-gray-100 mb-6 sm:mb-8 sticky top-14 sm:top-16 z-30 bg-white/95 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          
+          {/* Controls Bar: Filters & Sort side-by-side on mobile */}
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Mobile Filter Trigger */}
             <button
               onClick={() => setIsMobileFilterOpen(true)}
-              className="lg:hidden flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md active:scale-95 transition"
+              className="lg:hidden flex-1 sm:flex-none flex items-center justify-center gap-2 bg-black text-white px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md active:scale-95 transition"
             >
-              <FiFilter className="w-4 h-4" />
+              <FiFilter className="w-3.5 h-3.5" />
               Filters ({selectedCategories.length})
             </button>
 
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              Showing <span className="text-black font-bold">{filteredProducts.length}</span> Products
-            </span>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-            <span className="text-xs uppercase tracking-wider font-bold text-gray-500 hidden sm:inline">
-              Sort By:
-            </span>
-            <div className="relative w-full sm:w-auto">
+            {/* Sort Dropdown */}
+            <div className="relative flex-1 sm:flex-none">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full sm:w-auto appearance-none bg-gray-100 text-black text-xs font-semibold uppercase tracking-wider px-4 py-2.5 pr-8 rounded-full border border-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-black/10"
+                className="w-full sm:w-auto appearance-none bg-gray-100 text-black text-xs font-semibold uppercase tracking-wider px-3 sm:px-4 py-2.5 pr-8 rounded-full border border-gray-200 outline-none cursor-pointer focus:ring-2 focus:ring-black/10"
               >
                 <option value="featured">Sort: Featured</option>
                 <option value="price-low">Price: Low to High</option>
@@ -152,6 +145,10 @@ export default function ProductsPage() {
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black w-4 h-4 pointer-events-none" />
             </div>
           </div>
+
+          <span className="text-xs font-semibold text-gray-500 hidden sm:inline">
+            Showing <span className="text-black font-bold">{filteredProducts.length}</span> Products
+          </span>
         </div>
 
         {/* Active Filter Tags */}
