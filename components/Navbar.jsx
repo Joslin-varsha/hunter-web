@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { FiSearch, FiUser, FiShoppingBag, FiMenu, FiX, FiChevronRight } from "react-icons/fi";
 
@@ -52,13 +53,19 @@ export default function Navbar() {
             </nav>
           </div>
 
-          {/* Center Brand Logo */}
+          {/* Center Official Brand Logo */}
           <div className="flex justify-center">
             <Link
               href="/"
-              className="text-xl sm:text-2xl font-black tracking-[5px] sm:tracking-[7px] text-black hover:opacity-90 transition"
+              className="relative h-6 sm:h-8 w-28 sm:w-40 block hover:opacity-85 transition"
             >
-              HUNTER
+              <Image
+                src="/images/logo.png"
+                alt="HUNTER Logo"
+                fill
+                priority
+                className="object-contain object-center"
+              />
             </Link>
           </div>
 
@@ -97,7 +104,14 @@ export default function Navbar() {
       >
         <div className="p-6 overflow-y-auto">
           <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-            <span className="text-xl font-black tracking-[4px]">HUNTER</span>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className="relative h-6 w-28 block">
+              <Image
+                src="/images/logo.png"
+                alt="HUNTER Logo"
+                fill
+                className="object-contain object-left"
+              />
+            </Link>
             <button
               onClick={() => setIsMenuOpen(false)}
               className="p-1 text-black hover:opacity-70"

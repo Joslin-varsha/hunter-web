@@ -132,7 +132,7 @@ export default function CategoryIcons() {
         </div>
 
         {/* Circular Photo Category Badges - Horizontal Touch Scroll */}
-        <div className="flex items-center gap-4 sm:gap-7 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+        <div className="flex items-center gap-4 sm:gap-7 overflow-x-auto pt-1 pb-4 px-1 scrollbar-none snap-x snap-mandatory">
           {categoryPhotoItems.map((cat) => (
             <Link
               key={cat.name}
@@ -140,13 +140,13 @@ export default function CategoryIcons() {
               className="group flex flex-col items-center flex-shrink-0 snap-start cursor-pointer w-24 sm:w-32"
             >
               {/* Fully Rounded Circle Photo Container */}
-              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-black transition-all duration-300 shadow-md group-hover:shadow-xl group-hover:scale-105">
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-black transition-colors duration-300 shadow-sm group-hover:shadow-xl">
                 <Image
                   src={cat.image}
                   alt={cat.name}
                   fill
                   sizes="(max-width: 640px) 96px, 128px"
-                  className="object-cover object-center transition-transform duration-700 group-hover:scale-115"
+                  className="object-cover object-center transition-transform duration-500 group-hover:scale-115"
                 />
 
                 {/* Subtle Hover Dark Overlay */}

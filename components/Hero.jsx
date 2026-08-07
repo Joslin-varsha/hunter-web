@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import ScrollReveal from "./ScrollReveal";
 
 const slides = [
   {
     id: 1,
-    image: "/images/hero2.png",
-    imageMobile: "/images/hero22.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile1.png")
+    image: "/images/banner.jpg",
+    imageMobile: "/images/banner11.png", // The 5-model streetwear photo from your screenshot
   },
   {
     id: 2,
-    image: "/images/hero1.png",
-    imageMobile: "/images/hero11.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile2.png")
+    image: "/images/banner2.png",
+    imageMobile: "/images/banner22.png",
   },
   {
     id: 3,
-    image: "/images/heroo.png",
-    imageMobile: "/images/herooo.png", // <--- Replace with your portrait mobile image (e.g. "/images/hero-mobile3.png")
+    image: "/images/banner3.png",
+    imageMobile: "/images/banner33.png",
   },
 ];
 
@@ -51,83 +51,75 @@ export default function Hero() {
       {/* Full-Width Edge-to-Edge Hero Banner */}
       <div className="w-full">
         <div
-          className="relative w-full h-[calc(100dvh-120px)] sm:h-[calc(100vh-132px)] min-h-[380px] max-h-[780px] overflow-hidden bg-gray-900 group"
+          className="relative w-full aspect-[4/3] sm:aspect-auto sm:h-[calc(100vh-132px)] sm:min-h-[480px] sm:max-h-[780px] overflow-hidden bg-gray-900 group"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-            {/* Background Image Slides */}
-            {slides.map((slide, index) => (
-              <div
-                key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
-                }`}
-              >
-                {/* Desktop View Image */}
-                <Image
-                  src={slide.image}
-                  alt={`Hero Slide Desktop ${slide.id}`}
-                  fill
-                  priority={index === 0}
-                  sizes="(max-width: 1400px) 100vw, 1400px"
-                  className="hidden sm:block object-cover object-center animate-hero-zoom"
-                />
+          {/* Background Image Slides */}
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              {/* Desktop View Image */}
+              <Image
+                src={slide.image}
+                alt={`Hero Slide Desktop ${slide.id}`}
+                fill
+                priority={index === 0}
+                sizes="(max-width: 1400px) 100vw, 1400px"
+                className="hidden sm:block object-cover object-center animate-hero-zoom"
+              />
 
-                {/* Mobile View Image */}
-                <Image
-                  src={slide.imageMobile || slide.image}
-                  alt={`Hero Slide Mobile ${slide.id}`}
-                  fill
-                  priority={index === 0}
-                  sizes="100vw"
-                  className="sm:hidden object-cover object-center animate-hero-zoom"
-                />
-              </div>
-            ))}
-
-            {/* Controls: Arrow Navigation & Counter */}
-            <div className="absolute bottom-6 sm:bottom-8 right-6 sm:right-10 z-30 flex items-center gap-3">
-              {/* Slide Counter */}
-              <span className="text-white/90 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full font-mono text-xs sm:text-sm font-semibold tracking-widest border border-white/10 mr-1">
-                0{currentSlide + 1} / 0{slides.length}
-              </span>
-
-              {/* Prev Button */}
-              <button
-                onClick={prevSlide}
-                className="p-3 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
-                aria-label="Previous Slide"
-              >
-                <FiChevronLeft className="w-5 h-5 stroke-[2.5]" />
-              </button>
-
-              {/* Next Button */}
-              <button
-                onClick={nextSlide}
-                className="p-3 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
-                aria-label="Next Slide"
-              >
-                <FiChevronRight className="w-5 h-5 stroke-[2.5]" />
-              </button>
+              {/* Mobile View Image (Natural 4:3 Widescreen Aspect Ratio matching screenshot) */}
+              <Image
+                src={slide.imageMobile || slide.image}
+                alt={`Hero Slide Mobile ${slide.id}`}
+                fill
+                priority={index === 0}
+                sizes="100vw"
+                className="sm:hidden object-cover object-center animate-hero-zoom"
+              />
             </div>
+          ))}
 
-            {/* Bottom Left Slide Dots */}
-            <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-10 z-30 flex items-center gap-2">
-              {slides.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    idx === currentSlide
-                      ? "w-8 bg-white shadow-md"
-                      : "w-2 bg-white/40 hover:bg-white/70"
-                  }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                />
-              ))}
-            </div>
+          {/* Shop Now Overlay Glass Pill Button */}
+          <Link
+            href="/products"
+            className="absolute bottom-4 left-4 sm:bottom-8 sm:left-10 z-30 inline-flex items-center gap-1.5 bg-black/90 hover:bg-white text-white hover:text-black text-xs sm:text-sm font-black uppercase tracking-wider px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-white/40 shadow-2xl backdrop-blur-md transition-all active:scale-95"
+          >
+            <span>Shop Now</span>
+          </Link>
+
+          {/* Controls: Arrow Navigation & Counter */}
+          <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 z-30 flex items-center gap-2 sm:gap-3">
+            {/* Slide Counter */}
+            <span className="text-white/90 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full font-mono text-[11px] sm:text-sm font-semibold tracking-widest border border-white/10">
+              0{currentSlide + 1} / 0{slides.length}
+            </span>
+
+            {/* Prev Button */}
+            <button
+              onClick={prevSlide}
+              className="p-2 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              aria-label="Previous Slide"
+            >
+              <FiChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={nextSlide}
+              className="p-2 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              aria-label="Next Slide"
+            >
+              <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            </button>
           </div>
         </div>
+      </div>
 
       {/* Edge-to-Edge Full Width Marquee Ticker Bar */}
       <div className="w-full bg-[#111111] text-white py-3 px-0 overflow-hidden shadow-sm border-t border-black">

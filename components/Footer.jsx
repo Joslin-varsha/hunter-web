@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { FiInstagram, FiFacebook, FiTwitter } from "react-icons/fi";
 
@@ -12,9 +13,14 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
 
-            <h2 className="text-3xl sm:text-5xl font-black tracking-[6px] sm:tracking-[8px]">
-              HUNTER
-            </h2>
+            <Link href="/" className="relative h-8 sm:h-10 w-36 sm:w-48 block mb-4">
+              <Image
+                src="/images/logo.png"
+                alt="HUNTER Logo"
+                fill
+                className="object-contain object-left invert brightness-200"
+              />
+            </Link>
 
             <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base leading-relaxed sm:leading-8 max-w-md">
               Premium streetwear inspired by modern urban culture.

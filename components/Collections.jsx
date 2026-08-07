@@ -54,7 +54,7 @@ export default function Collections() {
                   {item.title}
                 </h3>
 
-                <button className="mt-4 bg-white text-black px-6 py-3 rounded-full font-semibold hover:bg-orange-500 hover:text-white transition">
+                <button className="mt-4 bg-white text-black px-6 py-3 rounded-full font-semibold hover:bg-black hover:text-white transition">
                   Shop Now
                 </button>
               </div>
