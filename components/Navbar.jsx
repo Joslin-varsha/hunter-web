@@ -11,7 +11,7 @@ import AccountDrawer from "./AccountDrawer";
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const { getCartCount, getWishlistCount } = useShop();
+  const { getCartCount, getWishlistCount, user } = useShop();
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
 

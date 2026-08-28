@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
+import { fetchHomeData } from "../utils/api";
 
 const ShopContext = createContext();
 
@@ -9,46 +10,34 @@ export function ShopProvider({ children }) {
   const [wishlist, setWishlist] = useState([]);
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState({
-    name: "Alex Morgan",
-    email: "alex.morgan@example.com",
-    isLoggedIn: true,
+    name: "",
+    email: "",
+    isLoggedIn: false,
   });
 
-  // Multiple Addresses Array
-  const [addresses, setAddresses] = useState([
-    {
-      id: "addr-1",
-      label: "Home",
-      firstName: "Alex",
-      lastName: "Morgan",
-      email: "alex.morgan@example.com",
-      phone: "+1 (555) 234-5678",
-      street: "742 Evergreen Terrace",
-      apartment: "Apt 4B",
-      city: "Los Angeles",
-      state: "CA",
-      zip: "90001",
-      country: "United States",
-      isDefault: true,
-    },
-    {
-      id: "addr-2",
-      label: "Work",
-      firstName: "Alex",
-      lastName: "Morgan",
-      email: "alex.morgan@example.com",
-      phone: "+1 (555) 987-6543",
-      street: "100 Innovation Way",
-      apartment: "Suite 500",
-      city: "San Francisco",
-      state: "CA",
-      zip: "94105",
-      country: "United States",
-      isDefault: false,
-    },
-  ]);
+  // Store Home API States
+  const [categories, setCategories] = useState([]);
+  const [topCategories, setTopCategories] = useState([]);
+  const [bestsellerProducts, setBestsellerProducts] = useState([]);
+  const [allApiProducts, setAllApiProducts] = useState([]);
+  const [storeInfo, setStoreInfo] = useState(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Fetch Store Home API Data
+  useEffect(() => {
+    async function loadStoreHomeData() {
+      const res = await fetchHomeData();
+      if (res?.status === 1 && res?.data) {
+        setCategories(res.data.categories || []);
+        setTopCategories(res.data.top_categories || []);
+        setBestsellerProducts(res.data.bestseller_products || []);
+        setAllApiProducts(res.data.all_products || []);
+        setStoreInfo(res.data.store || null);
+      }
+    }
+    loadStoreHomeData();
+  }, []);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -57,13 +46,11 @@ export function ShopProvider({ children }) {
       const savedWishlist = localStorage.getItem("hunter_wishlist");
       const savedOrders = localStorage.getItem("hunter_orders");
       const savedUser = localStorage.getItem("hunter_user");
-      const savedAddrs = localStorage.getItem("hunter_addresses");
 
       if (savedCart) setCart(JSON.parse(savedCart));
       if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
       if (savedOrders) setOrders(JSON.parse(savedOrders));
       if (savedUser) setUser(JSON.parse(savedUser));
-      if (savedAddrs) setAddresses(JSON.parse(savedAddrs));
     } catch (error) {
       console.error("Failed to load shop state from localStorage:", error);
     }
@@ -110,134 +97,103 @@ export function ShopProvider({ children }) {
     }
   }, [user, isLoaded]);
 
-  // Sync addresses to localStorage
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
-      localStorage.setItem("hunter_addresses", JSON.stringify(addresses));
-    } catch (error) {
-      console.error("Failed to save addresses to localStorage:", error);
-    }
-  }, [addresses, isLoaded]);
+  // Login action
+  const login = (userData) => {
+    const fn = userData?.customer?.first_name || (userData?.name ? userData.name.split(" ")[0] : "Joslin");
+    const ln = userData?.customer?.last_name || (userData?.name ? userData.name.split(" ").slice(1).join(" ") : "Varsha");
+    const fullName = `${fn} ${ln}`.trim();
 
-  // Address Actions
-  const addAddress = (newAddr) => {
-    const formatted = {
-      id: `addr-${Date.now()}`,
-      label: newAddr.label || "Home",
-      firstName: newAddr.firstName || user.name.split(" ")[0] || "Alex",
-      lastName: newAddr.lastName || user.name.split(" ")[1] || "Morgan",
-      email: newAddr.email || user.email || "alex.morgan@example.com",
-      phone: newAddr.phone || "",
-      street: newAddr.street || "",
-      apartment: newAddr.apartment || "",
-      city: newAddr.city || "",
-      state: newAddr.state || "",
-      zip: newAddr.zip || "",
-      country: newAddr.country || "United States",
-      isDefault: newAddr.isDefault || addresses.length === 0,
+    const newUserState = {
+      name: fullName,
+      email: userData?.customer?.email || userData?.email || "joslinvarsha55@gmail.com",
+      isLoggedIn: true,
+      token: userData?.token || "",
+      customer: userData?.customer || null,
     };
 
-    setAddresses((prev) => {
-      let updated = [...prev];
-      if (formatted.isDefault) {
-        updated = updated.map((a) => ({ ...a, isDefault: false }));
+    setUser(newUserState);
+    if (userData?.token) {
+      try {
+        localStorage.setItem("hunter_token", userData.token);
+      } catch (e) {
+        console.error("Token storage error:", e);
       }
-      return [formatted, ...updated];
-    });
+    }
   };
 
-  const setDefaultAddress = (addressId) => {
-    setAddresses((prev) =>
-      prev.map((a) => ({
-        ...a,
-        isDefault: a.id === addressId,
-      }))
-    );
-  };
-
-  const deleteAddress = (addressId) => {
-    setAddresses((prev) => {
-      const filtered = prev.filter((a) => a.id !== addressId);
-      if (filtered.length > 0 && !filtered.some((a) => a.isDefault)) {
-        filtered[0].isDefault = true;
-      }
-      return filtered;
-    });
-  };
-
-  // Helper to get current default address
-  const getDefaultAddress = () => {
-    return addresses.find((a) => a.isDefault) || addresses[0] || null;
-  };
-
-  // User Auth Actions
-  const login = (name = "Alex Morgan", email = "alex.morgan@example.com") => {
-    setUser({ name, email, isLoggedIn: true });
-  };
-
+  // Logout action
   const logout = () => {
-    setUser({ name: "", email: "", isLoggedIn: false });
+    setUser({
+      name: "",
+      email: "",
+      isLoggedIn: false,
+      token: "",
+      customer: null,
+    });
+    try {
+      localStorage.removeItem("hunter_token");
+      localStorage.removeItem("hunter_user");
+    } catch (e) {
+      console.error("Token clear error:", e);
+    }
   };
 
-  // Add item to cart
-  const addToCart = (product, size = "L", quantity = 1) => {
+  // Cart operations
+  const addToCart = (product, selectedSize = "M", quantity = 1) => {
     setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex(
-        (item) => item.product.id === product.id && item.selectedSize === size
-      );
+      const cartItemId = `${product.id}-${selectedSize}`;
+      const existingIndex = prevCart.findIndex((item) => item.cartItemId === cartItemId);
 
       if (existingIndex > -1) {
         const updated = [...prevCart];
         updated[existingIndex].quantity += quantity;
         return updated;
+      } else {
+        return [
+          ...prevCart,
+          {
+            cartItemId,
+            product,
+            selectedSize,
+            quantity,
+            price: product.price,
+          },
+        ];
       }
-
-      return [
-        ...prevCart,
-        {
-          cartItemId: `${product.id}-${size}-${Date.now()}`,
-          product,
-          selectedSize: size,
-          quantity,
-          price: product.price,
-        },
-      ];
     });
   };
 
-  // Remove item from cart
   const removeFromCart = (cartItemId) => {
-    setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
+    setCart((prevCart) => prevCart.filter((item) => item.cartItemId !== cartItemId));
   };
 
-  // Update item quantity
-  const updateQuantity = (cartItemId, newQuantity) => {
-    if (newQuantity <= 0) {
+  const updateQuantity = (cartItemId, newQty) => {
+    if (newQty <= 0) {
       removeFromCart(cartItemId);
       return;
     }
-    setCart((prev) =>
-      prev.map((item) =>
-        item.cartItemId === cartItemId ? { ...item, quantity: newQuantity } : item
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.cartItemId === cartItemId ? { ...item, quantity: newQty } : item
       )
     );
   };
 
-  // Toggle wishlist item
+  // Wishlist operations
   const toggleWishlist = (productId) => {
     setWishlist((prev) => {
       if (prev.includes(productId)) {
         return prev.filter((id) => id !== productId);
+      } else {
+        return [...prev, productId];
       }
-      return [...prev, productId];
     });
   };
 
-  // Add new order to Order History
+  // Add order
   const addOrder = (orderData) => {
     const formattedOrder = {
-      orderId: orderData.orderId || `HNR-${Math.floor(100000 + Math.random() * 900000)}`,
+      id: orderData.orderId || `HNR-${Math.floor(100000 + Math.random() * 900000)}`,
       date: new Date().toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -247,7 +203,7 @@ export function ShopProvider({ children }) {
       items: orderData.items || [],
       grandTotal: orderData.grandTotal || 0,
       shippingAddress: orderData.shippingAddress || {},
-      paymentMethod: orderData.paymentMethod || "Credit Card",
+      paymentMethod: orderData.paymentMethod || "Prepaid",
     };
 
     setOrders((prev) => [formattedOrder, ...prev]);
@@ -285,11 +241,11 @@ export function ShopProvider({ children }) {
         wishlist,
         orders,
         user,
-        addresses,
-        addAddress,
-        setDefaultAddress,
-        deleteAddress,
-        getDefaultAddress,
+        categories,
+        topCategories,
+        bestsellerProducts,
+        allApiProducts,
+        storeInfo,
         login,
         logout,
         addToCart,

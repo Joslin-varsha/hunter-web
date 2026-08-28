@@ -7,7 +7,7 @@ import { useShop } from "../src/context/ShopContext";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { getCartCount, getWishlistCount } = useShop();
+  const { getCartCount, getWishlistCount, user } = useShop();
 
   const cartCount = getCartCount();
   const wishlistCount = getWishlistCount();
