@@ -3,10 +3,17 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FiSearch, FiUser, FiShoppingBag, FiMenu, FiX, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiHeart, FiUser, FiShoppingBag, FiMenu, FiX, FiChevronRight } from "react-icons/fi";
+import { useShop } from "../src/context/ShopContext";
+
+import AccountDrawer from "./AccountDrawer";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const { getCartCount, getWishlistCount } = useShop();
+  const cartCount = getCartCount();
+  const wishlistCount = getWishlistCount();
 
   // Prevent background scroll when mobile menu is open
   useEffect(() => {
@@ -70,24 +77,40 @@ export default function Navbar() {
           </div>
 
           {/* Right Icons */}
-          <div className="flex justify-end items-center gap-3 sm:gap-6">
-            <Link href="/products" className="p-2 hover:text-black text-gray-700 transition" aria-label="Search">
+          <div className="flex justify-end items-center gap-2.5 sm:gap-5">
+            <Link href="/products" className="p-1.5 hover:text-black text-gray-700 transition" aria-label="Search">
               <FiSearch className="w-5 h-5 stroke-[2]" />
             </Link>
 
-            <button className="p-2 hover:text-black text-gray-700 transition hidden sm:block" aria-label="User Account">
-              <FiUser className="w-5 h-5 stroke-[2]" />
-            </button>
+            <Link href="/wishlist" className="relative p-1.5 hover:text-black text-gray-700 transition" aria-label="Wishlist">
+              <FiHeart className="w-5 h-5 stroke-[2]" />
+              {wishlistCount > 0 && (
+                <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
 
-            <button className="relative p-2 hover:text-black text-gray-700 transition" aria-label="Cart">
+            <Link href="/cart" className="relative p-1.5 hover:text-black text-gray-700 transition" aria-label="Cart">
               <FiShoppingBag className="w-5 h-5 stroke-[2]" />
               <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black text-white text-[10px] font-bold flex items-center justify-center">
-                0
+                {cartCount}
               </span>
-            </button>
+            </Link>
+
+            <Link
+              href="/account"
+              className="p-1.5 hover:text-black text-gray-700 transition"
+              aria-label="My Account"
+            >
+              <FiUser className="w-5 h-5 stroke-[2]" />
+            </Link>
           </div>
         </div>
       </header>
+
+      {/* Account Drawer Panel */}
+      <AccountDrawer isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
 
       {/* Mobile Slide-Out Drawer Navigation */}
       <div

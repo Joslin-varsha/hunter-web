@@ -98,7 +98,7 @@ export default function BestSelling() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {bestSellingProducts.map((item, idx) => (
           <ScrollReveal key={item.id} direction="up" delay={100 * (idx + 1)}>
-            <div className="group cursor-pointer flex flex-col transition-all duration-500 hover:-translate-y-2">
+            <Link href={`/products/${item.id}`} className="group cursor-pointer flex flex-col transition-all duration-500 hover:-translate-y-2">
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[#f6f6f6]">
                 <Image
                   src={item.image}
@@ -111,9 +111,9 @@ export default function BestSelling() {
                 
                 {/* Quick View Button */}
                 <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 translate-y-3 sm:translate-y-6 opacity-90 sm:opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                  <button className="bg-white/95 backdrop-blur-md text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold shadow-lg hover:bg-black hover:text-white transition-all">
+                  <span className="inline-block bg-white/95 backdrop-blur-md text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold shadow-lg group-hover:bg-black group-hover:text-white transition-all">
                     Quick View
-                  </button>
+                  </span>
                 </div>
               </div>
 
@@ -129,7 +129,7 @@ export default function BestSelling() {
                   {item.price}
                 </span>
               </div>
-            </div>
+            </Link>
           </ScrollReveal>
         ))}
       </div>

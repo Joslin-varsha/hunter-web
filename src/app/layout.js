@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ShopProvider } from "../context/ShopContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +23,9 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}
     >
-      <body className="min-h-full flex flex-col w-full overflow-x-hidden">{children}</body>
+      <body className="min-h-full flex flex-col w-full overflow-x-hidden">
+        <ShopProvider>{children}</ShopProvider>
+      </body>
     </html>
   );
 }

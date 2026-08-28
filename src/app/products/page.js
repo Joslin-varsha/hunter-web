@@ -76,41 +76,40 @@ export default function ProductsPage() {
       <TopBar />
       <Navbar />
 
-      {/* Page Header Banner */}
-      <div className="bg-[#111111] text-white py-6 sm:py-12 px-4 sm:px-6 lg:px-10">
-        <div className="max-w-[1550px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
-          <div>
-            <p className="text-[10px] sm:text-xs uppercase tracking-[3px] sm:tracking-[4px] text-gray-400 font-semibold mb-1 sm:mb-2">
-              HUNTER Streetwear Catalog
-            </p>
-            <h1 className="text-2xl sm:text-5xl font-black tracking-tight">
-              SHOP ALL PRODUCTS
-            </h1>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2 hidden sm:block">
-              Explore our full collection of premium streetwear, outerwear, and urban essentials.
-            </p>
+      {/* Clean Page Header */}
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 mb-0.5">
+            <Link href="/" className="hover:text-black transition">
+              Home
+            </Link>
+            <span>/</span>
+            <span className="text-black font-semibold">Shop All Products</span>
           </div>
+          <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight uppercase">
+            Shop All Products
+          </h1>
+        </div>
 
-          {/* Header Search Input */}
-          <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
-              className="w-full bg-[#1a1a1a] text-white placeholder-gray-500 border border-gray-700 text-xs sm:text-sm px-4 py-2.5 sm:py-3 rounded-full outline-none focus:border-white transition"
-            />
-            {searchQuery ? (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                <FiX className="w-4 h-4" />
-              </button>
-            ) : (
-              <FiSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            )}
-          </div>
+        {/* Header Search Input */}
+        <div className="relative w-full sm:w-80">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products..."
+            className="w-full bg-gray-50 text-black placeholder-gray-400 border border-gray-200 text-xs px-4 py-2.5 rounded-full outline-none focus:border-black transition"
+          />
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black"
+            >
+              <FiX className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+          )}
         </div>
       </div>
 
@@ -140,7 +139,6 @@ export default function ProductsPage() {
                 <option value="featured">Sort: Featured</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
               </select>
               <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black w-4 h-4 pointer-events-none" />
             </div>
@@ -309,8 +307,9 @@ export default function ProductsPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredProducts.map((product) => (
-                  <div
+                  <Link
                     key={product.id}
+                    href={`/products/${product.id}`}
                     className="group cursor-pointer flex flex-col rounded-2xl transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl"
                   >
                     {/* Image Container */}
@@ -332,10 +331,10 @@ export default function ProductsPage() {
                       )}
 
                       {/* Quick View */}
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 translate-y-3 opacity-90 sm:opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 w-[80%]">
-                        <button className="w-full bg-white/95 backdrop-blur-md text-black py-2.5 rounded-full text-xs font-semibold shadow-lg hover:bg-black hover:text-white transition-all">
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 translate-y-3 opacity-90 sm:opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 w-[80%] text-center">
+                        <span className="inline-block w-full bg-white/95 backdrop-blur-md text-black py-2.5 rounded-full text-xs font-semibold shadow-lg group-hover:bg-black group-hover:text-white transition-all">
                           Quick View
-                        </button>
+                        </span>
                       </div>
                     </div>
 
@@ -354,7 +353,7 @@ export default function ProductsPage() {
                         ${product.price}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

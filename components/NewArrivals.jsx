@@ -103,7 +103,7 @@ export default function NewArrivals() {
             direction="up"
             delay={100 * (idx + 1)}
           >
-            <div className="group cursor-pointer flex flex-col rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl">
+            <Link href={`/products/${item.id}`} className="group cursor-pointer flex flex-col rounded-2xl transition-all duration-500 hover:-translate-y-2 hover:shadow-xl">
 
               {/* Image */}
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[#f6f6f6]">
@@ -120,29 +120,29 @@ export default function NewArrivals() {
 
                 {/* Quick View */}
                 <div className="absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 translate-y-3 sm:translate-y-6 opacity-90 sm:opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                  <button className="bg-white/95 backdrop-blur-md text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold shadow-xl hover:bg-black hover:text-white transition-all duration-300">
+                  <span className="inline-block bg-white/95 backdrop-blur-md text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-semibold shadow-xl group-hover:bg-black group-hover:text-white transition-all duration-300">
                     Quick View
-                  </button>
+                  </span>
                 </div>
               </div>
 
               {/* Info */}
               <div className="flex justify-between items-start pt-3">
                 <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-black">
+                  <h3 className="text-base sm:text-lg font-bold text-black line-clamp-1">
                     {item.name}
                   </h3>
 
-                  <p className="text-xs uppercase tracking-[2px] text-gray-500 mt-0.5 sm:mt-1">
+                  <p className="text-xs uppercase tracking-[2px] text-gray-500 mt-1">
                     {item.category}
                   </p>
                 </div>
 
-                <span className="text-base sm:text-lg font-bold text-black ml-2">
-                  {item.price}
+                <span className="text-base sm:text-lg font-black text-black ml-2">
+                  ${item.price}
                 </span>
               </div>
-            </div>
+            </Link>
           </ScrollReveal>
         ))}
       </div>
