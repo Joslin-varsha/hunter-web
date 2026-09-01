@@ -1,21 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { FiShield, FiLock, FiEye, FiServer } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { FiShield, FiLock, FiEye, FiServer, FiArrowLeft } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import MobileBottomNav from "../../../components/MobileBottomNav";
 
 export default function PrivacyPage() {
+  const router = useRouter();
+
   return (
-    <main className="min-h-screen bg-white pb-28 lg:pb-12">
+    <main className="min-h-screen bg-white pb-28 lg:pb-0">
       <TopBar />
       <Navbar />
 
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-10 pb-6 border-b border-gray-100 flex items-baseline justify-between">
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-10 pb-4 sm:pb-6 border-b border-gray-100 flex items-baseline justify-between">
         <div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+          <button
+            onClick={() => router.back()}
+            className="sm:hidden inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:text-gray-600 transition active:scale-95 mb-1.5"
+            aria-label="Go Back"
+          >
+            <FiArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link href="/" className="hover:text-black transition">
               Home
             </Link>

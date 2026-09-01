@@ -3,30 +3,70 @@
 import { useState, Suspense, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FiCheck,
   FiArrowRight,
   FiShield,
+  FiArrowLeft,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import { useShop } from "../../context/ShopContext";
 import { allProducts } from "../../data/products";
-import { fetchCountries, fetchStates, fetchCities, fetchPaymentMethods } from "../../utils/api";
+import { fetchCountries, fetchStates, fetchCities, fetchPaymentMethods, processOrder, fetchProductDetails } from "../../utils/api";
+
+function loadRazorpayScript() {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 function CheckoutPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const isBuyNow = searchParams.get("buyNow") === "true";
   const buyNowId = Number(searchParams.get("id"));
   const buyNowSize = searchParams.get("size") || "L";
   const buyNowQty = Number(searchParams.get("qty")) || 1;
+  const buyNowName = searchParams.get("name") || "";
+  const buyNowPrice = Number(searchParams.get("price")) || 0;
+  const buyNowImg = searchParams.get("img") || "";
+  const buyNowVariantId = searchParams.get("variant_id");
+  const urlOrderId = searchParams.get("order_id");
+  const urlRazorpayOrderId = searchParams.get("razorpay_order_id");
+  const urlAmount = searchParams.get("amount");
 
   const { user, cart, clearCart, addOrder } = useShop();
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [orderData, setOrderData] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentLink, setPaymentLink] = useState("");
+  const [orderApiError, setOrderApiError] = useState("");
+
+  // Handle post-payment Razorpay redirect back to checkout
+  useEffect(() => {
+    if (urlOrderId) {
+      setOrderId(urlOrderId);
+      setOrderData({
+        product_order_id: urlOrderId,
+        razorpay_order_id: urlRazorpayOrderId,
+        final_price: Number(urlAmount) || 0,
+      });
+      setOrderPlaced(true);
+    }
+  }, [urlOrderId, urlRazorpayOrderId, urlAmount]);
 
   // 1. Customer Information State (Pre-filled if user logged in)
   const [customerInfo, setCustomerInfo] = useState({
@@ -183,18 +223,26 @@ function CheckoutPageContent() {
   };
 
   // Buy now product item
-  const buyNowProduct = allProducts.find((p) => p.id === buyNowId);
+  const buyNowProduct = (allProducts.find((p) => p.id === buyNowId)) || {
+    id: buyNowId,
+    name: buyNowName || "Streetwear Product",
+    price: buyNowPrice || 950,
+    sale_price: buyNowPrice || 950,
+    image: buyNowImg,
+    cover_image_url: buyNowImg,
+  };
 
   // Active checkout items
   const checkoutItems =
-    isBuyNow && buyNowProduct
+    isBuyNow && (buyNowProduct || buyNowName)
       ? [
           {
-            cartItemId: `buynow-${buyNowProduct.id}-${buyNowSize}`,
+            cartItemId: `buynow-${buyNowId}-${buyNowSize}`,
             product: buyNowProduct,
             selectedSize: buyNowSize,
             quantity: buyNowQty,
-            price: buyNowProduct.price || 950,
+            price: buyNowPrice || buyNowProduct?.price || 950,
+            variant_id: buyNowVariantId,
           },
         ]
       : cart;
@@ -207,36 +255,208 @@ function CheckoutPageContent() {
   const tax = 0;
   const grandTotal = Math.max(0, subtotal - couponDiscount + tax);
 
-  const handlePlaceOrder = (e) => {
+  const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    const generatedId = `HNR-${Math.floor(100000 + Math.random() * 900000)}`;
-    setOrderId(generatedId);
+    setIsSubmitting(true);
+    setOrderApiError("");
 
     const activeShipping = shipToDifferentAddress ? shippingAddress : billingAddress;
 
-    addOrder({
-      orderId: generatedId,
-      items: checkoutItems,
-      grandTotal,
-      shippingAddress: activeShipping,
-      paymentMethod,
-    });
+    // Asynchronously resolve real database variant_id for each cart item
+    const resolvedProductList = await Promise.all(
+      checkoutItems.map(async (item) => {
+        const prod = item.product || item;
+        const targetProductId = Number(prod?.id || item.id || 1);
+        let vId = item.variant_id || item.variantId || prod?.variant_id || (isBuyNow ? buyNowVariantId : null);
 
-    setOrderPlaced(true);
-    if (!isBuyNow) {
-      clearCart();
+        // If vId is invalid or equal to product_id, fetch single product details to get real variant_id
+        if (!vId || Number(vId) === targetProductId) {
+          let variants = prod?.variants;
+          if (!Array.isArray(variants) || variants.length === 0) {
+            try {
+              const detailRes = await fetchProductDetails(prod?.slug || targetProductId);
+              if (detailRes?.status === 1 && detailRes?.data?.product?.variants) {
+                variants = detailRes.data.product.variants;
+              }
+            } catch (err) {
+              console.error("Fetch variants error:", err);
+            }
+          }
+
+          if (Array.isArray(variants) && variants.length > 0) {
+            const sizeQuery = item.selectedSize || buyNowSize || "";
+            const matched = variants.find((v) => {
+              if (!v.variant) return false;
+              const vStr = String(v.variant).trim().toLowerCase();
+              const qStr = String(sizeQuery).trim().toLowerCase();
+              return vStr.startsWith(qStr) || qStr.startsWith(vStr) || vStr.includes(qStr);
+            });
+            if (matched?.id) {
+              vId = matched.id;
+            } else if (variants[0]?.id) {
+              vId = variants[0].id;
+            }
+          }
+        }
+
+        const finalVariantId = Number(vId || targetProductId);
+
+        return {
+          product_id: targetProductId,
+          variant_id: finalVariantId,
+          qty: item.quantity,
+          price: item.price || prod?.price || 0,
+          original_price: prod?.original_price || item.price || prod?.price || 0,
+        };
+      })
+    );
+
+    // Construct API Payload matching backend specification
+    const orderPayload = {
+      payment_type: paymentMethod,
+      payment_comment: "",
+      delivery_id: 1,
+      delivery_comment: "",
+      additional_note: "",
+      cartlist: {
+        total_final_price: grandTotal,
+        total_sub_price: subtotal,
+        tax_price: tax,
+        shipping_price: 0,
+        coupon_price: couponDiscount,
+        coupon_code: couponCode || "",
+        coupon_info: null,
+        product_list: resolvedProductList,
+      },
+      billing_info: {
+        firstname: customerInfo.firstName,
+        lastname: customerInfo.lastName,
+        email: customerInfo.email,
+        billing_user_telephone: customerInfo.phone,
+        billing_address: billingAddress.street,
+        billing_postecode: billingAddress.postalCode,
+        billing_country: billingAddress.country,
+        billing_state: billingAddress.state,
+        billing_city: billingAddress.district,
+        delivery_address: activeShipping.street,
+        delivery_city: activeShipping.district,
+        delivery_postcode: activeShipping.postalCode,
+        delivery_country: activeShipping.country,
+        delivery_state: activeShipping.state,
+      },
+    };
+
+    try {
+      const res = await processOrder(orderPayload);
+      if (res?.status === "success" || res?.data?.product_order_id || res?.data?.order_id) {
+        const responseData = res.data || {};
+        const finalOrderId = responseData.product_order_id || responseData.order_id || `HNR-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        // Extract Razorpay key from payment_link query string or response data
+        let rzpKey = responseData.key || responseData.razorpay_key;
+        if (!rzpKey && responseData.payment_link) {
+          try {
+            const urlObj = new URL(responseData.payment_link);
+            rzpKey = urlObj.searchParams.get("key");
+          } catch (e) {}
+        }
+
+        // Open Razorpay JS popup modal directly on current page
+        const scriptLoaded = await loadRazorpayScript();
+        if (scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
+          const amountInPaise = Math.round((Number(responseData.final_price) || grandTotal) * 100);
+
+          const options = {
+            key: rzpKey || "rzp_live_RqDb8X8JWRzxdI",
+            amount: amountInPaise,
+            currency: "INR",
+            name: "Hunter Mens Wear",
+            description: `Order #${finalOrderId}`,
+            order_id: responseData.razorpay_order_id,
+            prefill: {
+              name: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
+              email: customerInfo.email,
+              contact: customerInfo.phone,
+            },
+            theme: {
+              color: "#000000",
+            },
+            handler: function (response) {
+              setOrderId(finalOrderId);
+              setOrderData({
+                ...responseData,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              addOrder({
+                orderId: finalOrderId,
+                items: checkoutItems,
+                grandTotal: responseData.final_price || grandTotal,
+                shippingAddress: activeShipping,
+                paymentMethod,
+                responseData: responseData,
+              });
+              setOrderPlaced(true);
+              if (!isBuyNow) clearCart();
+              setIsSubmitting(false);
+            },
+            modal: {
+              ondismiss: function () {
+                setIsSubmitting(false);
+              },
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+          return;
+        }
+
+        // Fallback for COD or if Razorpay script is unavailable
+        setOrderId(finalOrderId);
+        setOrderData(responseData);
+        addOrder({
+          orderId: finalOrderId,
+          items: checkoutItems,
+          grandTotal: responseData.final_price || grandTotal,
+          shippingAddress: activeShipping,
+          paymentMethod,
+          responseData: responseData,
+        });
+        setOrderPlaced(true);
+        if (!isBuyNow) clearCart();
+      } else {
+        setOrderApiError(res?.message || "Failed to process order. Please try again.");
+      }
+    } catch (err) {
+      console.error("Order submit error:", err);
+      setOrderApiError(err.message || "An unexpected error occurred while placing your order.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-white pb-24 lg:pb-12">
+    <main className="min-h-screen bg-white pb-24 lg:pb-0">
       <TopBar />
       <Navbar />
 
       {/* Clean Header */}
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-3 sm:pb-6 border-b border-gray-100 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 mb-0.5">
+          {/* Mobile View: Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="sm:hidden inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:text-gray-600 transition active:scale-95 mb-1.5"
+            aria-label="Go Back"
+          >
+            <FiArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+
+          {/* Desktop View: Breadcrumb Navigation */}
+          <div className="hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 mb-0.5">
             <Link href="/" className="hover:text-black transition">
               Home
             </Link>
@@ -272,10 +492,22 @@ function CheckoutPageContent() {
               Thank You For Your Order!
             </h2>
             <p className="text-xs font-mono font-bold text-purple-600 mt-1">
-              Order ID: {orderId}
+              Product Order ID: {orderData?.product_order_id || orderId}
             </p>
 
-            <div className="mt-4 p-4 bg-white rounded-xl border border-gray-200 text-left max-w-md mx-auto space-y-1.5 text-xs text-gray-700">
+            <div className="mt-4 p-4 bg-white rounded-xl border border-gray-200 text-left max-w-md mx-auto space-y-2 text-xs text-gray-700">
+              {orderData?.order_id && (
+                <p className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <strong className="text-black">Backend Order ID:</strong>
+                  <span className="font-mono font-bold text-black">{orderData.order_id}</span>
+                </p>
+              )}
+              {orderData?.razorpay_order_id && (
+                <p className="flex justify-between border-b border-gray-100 pb-1.5">
+                  <strong className="text-black">Razorpay Order ID:</strong>
+                  <span className="font-mono font-bold text-gray-800">{orderData.razorpay_order_id}</span>
+                </p>
+              )}
               <p>
                 <strong className="text-black">Customer:</strong> {customerInfo.firstName}{" "}
                 {customerInfo.lastName} ({customerInfo.email})
@@ -299,10 +531,23 @@ function CheckoutPageContent() {
                 <strong className="text-black">Payment Method:</strong>{" "}
                 {activePaymentObj?.label || paymentMethod}
               </p>
-              <p className="pt-1 text-sm font-black text-black">
-                Grand Total: ₹{grandTotal.toLocaleString("en-IN")}
+              <p className="pt-2 text-sm font-black text-black border-t border-gray-100 flex justify-between items-center">
+                <span>Final Price:</span>
+                <span className="text-green-600 font-mono text-base">₹{(orderData?.final_price || grandTotal).toLocaleString("en-IN")}</span>
               </p>
             </div>
+
+            {(paymentLink || orderData?.payment_link) && (
+              <div className="mt-5 max-w-md mx-auto">
+                <a
+                  href={paymentLink || orderData?.payment_link}
+                  className="inline-flex items-center justify-center w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 px-6 rounded-full text-xs uppercase tracking-wider transition shadow-xl gap-2 active:scale-95"
+                >
+                  <span>Pay Now via Razorpay</span>
+                  <FiArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
 
             <Link
               href="/products"
@@ -338,7 +583,7 @@ function CheckoutPageContent() {
                         onChange={(e) =>
                           setCustomerInfo({ ...customerInfo, firstName: e.target.value })
                         }
-                        placeholder="Joslin"
+                        placeholder="First Name"
                         className="w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-xs font-medium text-black outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 transition"
                       />
                     </div>
@@ -354,7 +599,7 @@ function CheckoutPageContent() {
                         onChange={(e) =>
                           setCustomerInfo({ ...customerInfo, lastName: e.target.value })
                         }
-                        placeholder="Varsha"
+                        placeholder="Last Name"
                         className="w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-xs font-medium text-black outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 transition"
                       />
                     </div>
@@ -370,7 +615,7 @@ function CheckoutPageContent() {
                         onChange={(e) =>
                           setCustomerInfo({ ...customerInfo, phone: e.target.value })
                         }
-                        placeholder="9940843790"
+                        placeholder="Phone Number"
                         className="w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-xs font-medium text-black outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 transition"
                       />
                     </div>
@@ -385,7 +630,7 @@ function CheckoutPageContent() {
                         onChange={(e) =>
                           setCustomerInfo({ ...customerInfo, email: e.target.value })
                         }
-                        placeholder="joslinvarsha55@gmail.com"
+                        placeholder="Email Address"
                         className="w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-xs font-medium text-black outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600 transition"
                       />
                     </div>
@@ -669,7 +914,7 @@ function CheckoutPageContent() {
                         ? item.product.image
                         : Array.isArray(item?.product?.image) && item.product.image.length > 0
                         ? item.product.image[0]
-                        : "/images/placeholder.jpg";
+                        : "";
 
                     const prodName = item?.product?.name || item?.product?.title || "HUNTER Apparel";
                     const itemPrice = item.price || item.product?.price || 950;
@@ -774,10 +1019,17 @@ function CheckoutPageContent() {
                 {/* Complete Order Button */}
                 <button
                   type="submit"
-                  className="w-full bg-black text-white py-4 rounded-full text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+                  disabled={isSubmitting}
+                  className="w-full bg-black text-white py-4 rounded-full text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>Complete Order</span>
-                  <FiArrowRight className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <span>Processing Order...</span>
+                  ) : (
+                    <>
+                      <span>Complete Order</span>
+                      <FiArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>

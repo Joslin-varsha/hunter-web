@@ -82,7 +82,7 @@ export default function Navbar() {
               <FiSearch className="w-5 h-5 stroke-[2]" />
             </Link>
 
-            <Link href="/wishlist" className="relative p-1.5 hover:text-black text-gray-700 transition" aria-label="Wishlist">
+            <Link href="/wishlist" className="hidden lg:flex relative p-1.5 hover:text-black text-gray-700 transition items-center" aria-label="Wishlist">
               <FiHeart className="w-5 h-5 stroke-[2]" />
               {wishlistCount > 0 && (
                 <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
@@ -91,7 +91,7 @@ export default function Navbar() {
               )}
             </Link>
 
-            <Link href="/cart" className="relative p-1.5 hover:text-black text-gray-700 transition" aria-label="Cart">
+            <Link href="/cart" className="hidden lg:flex relative p-1.5 hover:text-black text-gray-700 transition items-center" aria-label="Cart">
               <FiShoppingBag className="w-5 h-5 stroke-[2]" />
               <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black text-white text-[10px] font-bold flex items-center justify-center">
                 {cartCount}
@@ -100,7 +100,7 @@ export default function Navbar() {
 
             <Link
               href="/account"
-              className="p-1.5 hover:text-black text-gray-700 transition"
+              className="hidden lg:flex p-1.5 hover:text-black text-gray-700 transition items-center"
               aria-label="My Account"
             >
               <FiUser className="w-5 h-5 stroke-[2]" />

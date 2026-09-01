@@ -1,10 +1,55 @@
 // API Configuration and Utility Functions
 
 export const API_HOST = process.env.NEXT_PUBLIC_API_BASE_URL || "http://52.66.7.6:3000";
+export const STORE_SLUG = process.env.NEXT_PUBLIC_STORE_SLUG || "hunter-mens-wear";
 
-// Use Next.js rewrite proxy /api in browser to bypass Cloudflare Tunnel CORS & Provisional Header blocks
+// Next.js rewrite proxy in browser bypasses CORS & Security blocks
 export const BASE_URL = typeof window !== "undefined" ? "/api" : API_HOST;
-export const STORE_SLUG = "hunter-mens-wear";
+export const HOME_BASE_URL = BASE_URL;
+
+/**
+ * Get Secure Authorization Headers dynamically
+ */
+export function getAuthHeaders(customHeaders = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+    ...customHeaders,
+  };
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("hunter_token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+}
+
+/**
+ * Safely parse JSON API response to prevent SyntaxError crashes on 500 HTML responses
+ */
+async function safeJsonParse(response) {
+  try {
+    const text = await response.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error(`API response is non-JSON (${response.status}):`, text.substring(0, 150));
+      return {
+        status: "error",
+        status_code: response.status,
+        message: text.includes("Internal Server Error")
+          ? "Internal Server Error (500). Please verify backend database logs or payload fields."
+          : `Server returned error (${response.status}).`,
+      };
+    }
+  } catch (err) {
+    return {
+      status: "error",
+      message: err.message || "Failed to read response from server.",
+    };
+  }
+}
 
 /**
  * Register a new customer
@@ -29,7 +74,7 @@ export async function registerCustomer(customerData) {
       }),
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Registration Error:", error);
@@ -58,7 +103,7 @@ export async function loginCustomer(credentials) {
       }),
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Login Error:", error);
@@ -87,7 +132,7 @@ export async function verifyOTP(otpData) {
       }),
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("OTP Verification Error:", error);
@@ -113,7 +158,7 @@ export async function forgotPassword(email) {
       body: JSON.stringify({ email }),
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Forgot Password Error:", error);
@@ -144,7 +189,7 @@ export async function resetPassword(resetData) {
       }),
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Reset Password Error:", error);
@@ -167,7 +212,7 @@ export async function fetchCountries() {
       },
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Fetch Countries Error:", error);
@@ -191,7 +236,7 @@ export async function fetchStates(countryId = 101) {
       },
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Fetch States Error:", error);
@@ -215,7 +260,7 @@ export async function fetchCities(stateId) {
       },
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Fetch Cities Error:", error);
@@ -238,7 +283,7 @@ export async function fetchPaymentMethods() {
       },
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Fetch Payment Methods Error:", error);
@@ -254,17 +299,18 @@ export async function fetchPaymentMethods() {
 
 /**
  * Fetch Store Home Data (Store details, Categories, Bestseller Products, All Products)
+ * Base URL: https://blue-enabled-therefore-anywhere.trycloudflare.com
  */
 export async function fetchHomeData() {
   try {
-    const response = await fetch(`${BASE_URL}/${STORE_SLUG}/home`, {
+    const response = await fetch(`${HOME_BASE_URL}/${STORE_SLUG}/home`, {
       method: "GET",
       headers: {
         "Accept": "application/json",
       },
     });
 
-    const data = await response.json();
+    const data = await safeJsonParse(response);
     return data;
   } catch (error) {
     console.error("Fetch Home Data Error:", error);
@@ -274,3 +320,110 @@ export async function fetchHomeData() {
     };
   }
 }
+
+/**
+ * Fetch Product List by Category, Page, Search, and Price Filters
+ * Endpoint: GET /hunter-mens-wear/product-list
+ */
+export async function fetchProductList({
+  page = 1,
+  product_tag = "",
+  product_brand = "",
+  min_price = 0,
+  max_price = 0,
+  filter_product = "all",
+  search = "",
+} = {}) {
+  try {
+    const paramsObj = {
+      page: String(page),
+      filter_product: String(filter_product || "all"),
+    };
+
+    if (product_tag) paramsObj.product_tag = String(product_tag);
+    if (product_brand) paramsObj.product_brand = String(product_brand);
+    if (min_price) paramsObj.min_price = String(min_price);
+    if (max_price) paramsObj.max_price = String(max_price);
+    if (search) {
+      paramsObj.search = String(search);
+      paramsObj.query = String(search);
+      paramsObj.q = String(search);
+    }
+
+    const queryParams = new URLSearchParams(paramsObj);
+
+    const response = await fetch(
+      `${HOME_BASE_URL}/${STORE_SLUG}/product-list?${queryParams.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await safeJsonParse(response);
+    return data;
+  } catch (error) {
+    console.error("Fetch Product List Error:", error);
+    return {
+      status: 0,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Fetch Single Product Details by Product Slug or ID
+ * Endpoint: GET /hunter-mens-wear/product/{slug}
+ */
+export async function fetchProductDetails(productSlug) {
+  try {
+    const response = await fetch(
+      `${HOME_BASE_URL}/${STORE_SLUG}/product/${productSlug}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const data = await safeJsonParse(response);
+    return data;
+  } catch (error) {
+    console.error("Fetch Product Details Error:", error);
+    return {
+      status: 0,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Process Customer Order
+ * Endpoint: POST /customer/order/process/{STORE_SLUG}
+ * @param {Object} orderPayload
+ */
+export async function processOrder(orderPayload) {
+  try {
+    const response = await fetch(`${BASE_URL}/customer/order/process/${STORE_SLUG}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(orderPayload),
+    });
+
+    const data = await safeJsonParse(response);
+    return data;
+  } catch (error) {
+    console.error("Process Order Error:", error);
+    return {
+      status: "error",
+      message: error.message || "Failed to process order with backend server.",
+    };
+  }
+}
+

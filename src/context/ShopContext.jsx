@@ -21,41 +21,99 @@ export function ShopProvider({ children }) {
   const [bestsellerProducts, setBestsellerProducts] = useState([]);
   const [allApiProducts, setAllApiProducts] = useState([]);
   const [storeInfo, setStoreInfo] = useState(null);
+  const [isHomeLoading, setIsHomeLoading] = useState(true);
 
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Fetch Store Home API Data
   useEffect(() => {
     async function loadStoreHomeData() {
-      const res = await fetchHomeData();
-      if (res?.status === 1 && res?.data) {
-        setCategories(res.data.categories || []);
-        setTopCategories(res.data.top_categories || []);
-        setBestsellerProducts(res.data.bestseller_products || []);
-        setAllApiProducts(res.data.all_products || []);
-        setStoreInfo(res.data.store || null);
+      setIsHomeLoading(true);
+      try {
+        const res = await fetchHomeData();
+        if (res?.status === 1 && res?.data) {
+          setCategories(res.data.categories || []);
+          setTopCategories(res.data.top_categories || []);
+          setBestsellerProducts(res.data.bestseller_products || []);
+          setAllApiProducts(res.data.all_products || []);
+          setStoreInfo(res.data.store || null);
+        }
+      } catch (err) {
+        console.error("Home API Load Error:", err);
+      } finally {
+        setIsHomeLoading(false);
       }
     }
     loadStoreHomeData();
   }, []);
 
   // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("hunter_cart");
-      const savedWishlist = localStorage.getItem("hunter_wishlist");
-      const savedOrders = localStorage.getItem("hunter_orders");
-      const savedUser = localStorage.getItem("hunter_user");
+ // Load from localStorage on mount
+useEffect(() => {
+  try {
+    const savedCart = localStorage.getItem("hunter_cart");
+    const savedWishlist = localStorage.getItem("hunter_wishlist");
+    const savedOrders = localStorage.getItem("hunter_orders");
+    const savedUser = localStorage.getItem("hunter_user");
+    const savedToken = localStorage.getItem("hunter_token");
 
-      if (savedCart) setCart(JSON.parse(savedCart));
-      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-      if (savedOrders) setOrders(JSON.parse(savedOrders));
-      if (savedUser) setUser(JSON.parse(savedUser));
-    } catch (error) {
-      console.error("Failed to load shop state from localStorage:", error);
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
     }
+
+    if (savedWishlist) {
+      setWishlist(JSON.parse(savedWishlist));
+    }
+
+    if (savedOrders) {
+      setOrders(JSON.parse(savedOrders));
+    }
+
+    // -----------------------------
+    // RESTORE AUTHENTICATION
+    // -----------------------------
+    // -----------------------------
+// RESTORE AUTHENTICATION
+// -----------------------------
+const validToken =
+  typeof savedToken === "string" &&
+  savedToken.trim() !== "" &&
+  savedToken !== "undefined" &&
+  savedToken !== "null";
+
+if (savedUser && validToken) {
+  const parsedUser = JSON.parse(savedUser);
+
+  if (parsedUser) {
+    setUser({
+      ...parsedUser,
+      isLoggedIn: true,
+      token: savedToken,
+    });
+  }
+} else {
+  setUser({
+    name: "",
+    email: "",
+    isLoggedIn: false,
+    token: "",
+    customer: null,
+  });
+}
+  } catch (error) {
+    console.error("Failed to load shop state from localStorage:", error);
+
+    setUser({
+      name: "",
+      email: "",
+      isLoggedIn: false,
+      token: "",
+      customer: null,
+    });
+  } finally {
     setIsLoaded(true);
-  }, []);
+  }
+}, []);
 
   // Sync cart to localStorage
   useEffect(() => {
@@ -99,25 +157,26 @@ export function ShopProvider({ children }) {
 
   // Login action
   const login = (userData) => {
-    const fn = userData?.customer?.first_name || (userData?.name ? userData.name.split(" ")[0] : "Joslin");
-    const ln = userData?.customer?.last_name || (userData?.name ? userData.name.split(" ").slice(1).join(" ") : "Varsha");
-    const fullName = `${fn} ${ln}`.trim();
+    const fn = userData?.customer?.first_name || (userData?.name ? userData.name.split(" ")[0] : "") || "";
+    const ln = userData?.customer?.last_name || (userData?.name ? userData.name.split(" ").slice(1).join(" ") : "") || "";
+    const fullName = `${fn} ${ln}`.trim() || userData?.name || "Customer";
 
     const newUserState = {
       name: fullName,
-      email: userData?.customer?.email || userData?.email || "joslinvarsha55@gmail.com",
+      email: userData?.customer?.email || userData?.email || "",
       isLoggedIn: true,
       token: userData?.token || "",
       customer: userData?.customer || null,
     };
 
     setUser(newUserState);
-    if (userData?.token) {
-      try {
+    try {
+      localStorage.setItem("hunter_user", JSON.stringify(newUserState));
+      if (userData?.token) {
         localStorage.setItem("hunter_token", userData.token);
-      } catch (e) {
-        console.error("Token storage error:", e);
       }
+    } catch (e) {
+      console.error("Storage error:", e);
     }
   };
 
@@ -241,11 +300,13 @@ export function ShopProvider({ children }) {
         wishlist,
         orders,
         user,
+        isLoaded,
         categories,
         topCategories,
         bestsellerProducts,
         allApiProducts,
         storeInfo,
+        isHomeLoading,
         login,
         logout,
         addToCart,

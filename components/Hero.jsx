@@ -88,34 +88,34 @@ export default function Hero() {
           {/* Shop Now Overlay Glass Pill Button */}
           <Link
             href="/products"
-            className="absolute bottom-4 left-4 sm:bottom-8 sm:left-10 z-30 inline-flex items-center gap-1.5 bg-black/90 hover:bg-white text-white hover:text-black text-xs sm:text-sm font-black uppercase tracking-wider px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-white/40 shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="absolute bottom-3 left-3 sm:bottom-8 sm:left-10 z-30 inline-flex items-center gap-1 bg-black/90 hover:bg-white text-white hover:text-black text-[11px] sm:text-sm font-black uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-3 rounded-full border border-white/40 shadow-2xl backdrop-blur-md transition-all active:scale-95"
           >
             <span>Shop Now</span>
           </Link>
 
           {/* Controls: Arrow Navigation & Counter */}
-          <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-10 z-30 flex items-center gap-2 sm:gap-3">
+          <div className="absolute bottom-3 sm:bottom-8 right-3 sm:right-10 z-30 flex items-center gap-1.5 sm:gap-3">
             {/* Slide Counter */}
-            <span className="text-white/90 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full font-mono text-[11px] sm:text-sm font-semibold tracking-widest border border-white/10">
+            <span className="text-white/90 bg-black/40 backdrop-blur-md px-2 sm:px-2.5 py-1 rounded-full font-mono text-[10px] sm:text-sm font-semibold tracking-widest border border-white/10">
               0{currentSlide + 1} / 0{slides.length}
             </span>
 
             {/* Prev Button */}
             <button
               onClick={prevSlide}
-              className="p-2 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              className="p-1.5 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
               aria-label="Previous Slide"
             >
-              <FiChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+              <FiChevronLeft className="w-3.5 h-3.5 sm:w-5 sm:h-5 stroke-[2.5]" />
             </button>
 
             {/* Next Button */}
             <button
               onClick={nextSlide}
-              className="p-2 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
+              className="p-1.5 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
               aria-label="Next Slide"
             >
-              <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+              <FiChevronRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 stroke-[2.5]" />
             </button>
           </div>
         </div>

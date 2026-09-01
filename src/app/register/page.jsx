@@ -28,16 +28,37 @@ import { registerCustomer, verifyOTP } from "../../utils/api";
 function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/";
+  const redirectParam = searchParams.get("redirect");
+  const redirectPath =
+    redirectParam && redirectParam !== "/login" && redirectParam !== "/register"
+      ? redirectParam
+      : "/";
 
-  const { user, login } = useShop();
+  const { login, user, isLoaded } = useShop();
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Redirect away if already logged in
   useEffect(() => {
-    if (user?.isLoggedIn) {
-      router.replace(redirectPath || "/account");
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("hunter_token") : null;
+      const isValidToken =
+        token &&
+        typeof token === "string" &&
+        token.trim() !== "" &&
+        token !== "undefined" &&
+        token !== "null";
+
+      if (isValidToken || user?.isLoggedIn === true) {
+        if (typeof window !== "undefined") {
+          window.location.replace(redirectPath);
+        }
+        return;
+      }
+    } catch (e) {}
+
+    if (isLoaded) {
+      setCheckingAuth(false);
     }
-  }, [user, router, redirectPath]);
+  }, [isLoaded, user?.isLoggedIn, redirectPath]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +118,9 @@ function RegisterPageContent() {
 
     setIsLoading(false);
 
-    if (res.status === "success") {
+    const isSuccess = res.status === "success" || res.status === 1 || res.status === "1" || res.success === true;
+
+    if (isSuccess) {
       setSuccessMessage(res.message || "Registration successful! An OTP has been sent to your email.");
       if (res.otp) {
         setReceivedOtp(String(res.otp));
@@ -126,7 +149,9 @@ function RegisterPageContent() {
     const res = await verifyOTP({ email: emailAddress, otp: enteredOtp });
     setIsLoading(false);
 
-    if (res.status === "success") {
+    const isVerifySuccess = res.status === "success" || res.status === 1 || res.status === "1" || res.success === true;
+
+    if (isVerifySuccess) {
       if (res.token) {
         localStorage.setItem("hunter_token", res.token);
       }
@@ -134,7 +159,12 @@ function RegisterPageContent() {
         ? `${res.customer.first_name || ""} ${res.customer.last_name || ""}`.trim()
         : fullName;
 
-      login(custName || "Valued Member", res.customer?.email || emailAddress, res.customer);
+      login({
+        name: custName || "Valued Member",
+        email: res.customer?.email || emailAddress,
+        customer: res.customer || null,
+        token: res.token || "",
+      });
       setShowOtpModal(false);
       setSuccessMessage(res.message || "Email verified successfully! Welcome to HUNTER.");
       setTimeout(() => {
@@ -144,6 +174,10 @@ function RegisterPageContent() {
       setErrorMessage(res.message || "Incorrect OTP. Please check the code sent to your email.");
     }
   };
+
+  if (checkingAuth) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-[#f8f9fa] flex flex-col justify-between">

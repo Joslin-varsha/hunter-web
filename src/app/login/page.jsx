@@ -31,16 +31,37 @@ import { registerCustomer, loginCustomer, verifyOTP, forgotPassword, resetPasswo
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/";
+  const redirectParam = searchParams.get("redirect");
+  const redirectPath =
+    redirectParam && redirectParam !== "/login" && redirectParam !== "/register"
+      ? redirectParam
+      : "/";
 
-  const { user, login } = useShop();
+  const { login, user, isLoaded } = useShop();
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // Redirect away if already logged in
   useEffect(() => {
-    if (user?.isLoggedIn) {
-      router.replace(redirectPath || "/account");
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("hunter_token") : null;
+      const isValidToken =
+        token &&
+        typeof token === "string" &&
+        token.trim() !== "" &&
+        token !== "undefined" &&
+        token !== "null";
+
+      if (isValidToken || user?.isLoggedIn === true) {
+        if (typeof window !== "undefined") {
+          window.location.replace(redirectPath);
+        }
+        return;
+      }
+    } catch (e) {}
+
+    if (isLoaded) {
+      setCheckingAuth(false);
     }
-  }, [user, router, redirectPath]);
+  }, [isLoaded, user?.isLoggedIn, redirectPath]);
 
   // Mode: "signin" | "register"
   const [authMode, setAuthMode] = useState("signin");
@@ -88,7 +109,9 @@ function LoginPageContent() {
     const res = await loginCustomer({ email: emailAddress, password });
     setIsLoading(false);
 
-    if (res.status === "success") {
+    const isSuccess = res.status === "success" || res.status === 1 || res.status === "1" || res.success === true || (res.token && res.token.length > 10);
+
+    if (isSuccess) {
       if (res.token) {
         localStorage.setItem("hunter_token", res.token);
       }
@@ -96,7 +119,12 @@ function LoginPageContent() {
         ? `${res.customer.first_name || ""} ${res.customer.last_name || ""}`.trim()
         : emailAddress.split("@")[0];
 
-      login(custName || "Valued Member", res.customer?.email || emailAddress, res.customer);
+      login({
+        name: custName || "Valued Member",
+        email: res.customer?.email || emailAddress,
+        customer: res.customer || null,
+        token: res.token || "",
+      });
       setSuccessMessage("Signed in successfully! Redirecting...");
       setTimeout(() => {
         router.push(redirectPath);
@@ -144,7 +172,7 @@ function LoginPageContent() {
 
     setIsLoading(false);
 
-    if (res.status === "success") {
+    if (res.status === "success" || res.status === 1 || res.status === "1" || res.success === true) {
       setSuccessMessage(res.message || "Registration successful! An OTP has been sent to your email.");
       setShowOtpModal(true);
     } else {
@@ -165,7 +193,7 @@ function LoginPageContent() {
     const res = await verifyOTP({ email: emailAddress, otp: enteredOtp });
     setIsLoading(false);
 
-    if (res.status === "success") {
+    if (res.status === "success" || res.status === 1 || res.status === "1" || res.success === true) {
       if (res.token) {
         localStorage.setItem("hunter_token", res.token);
       }
@@ -173,7 +201,12 @@ function LoginPageContent() {
         ? `${res.customer.first_name || ""} ${res.customer.last_name || ""}`.trim()
         : fullName;
 
-      login(custName || "Valued Member", res.customer?.email || emailAddress, res.customer);
+      login({
+        name: custName || "Valued Member",
+        email: res.customer?.email || emailAddress,
+        customer: res.customer || null,
+        token: res.token || "",
+      });
       setShowOtpModal(false);
       setSuccessMessage(res.message || "Email verified successfully! Welcome to HUNTER.");
       setTimeout(() => {
@@ -198,7 +231,7 @@ function LoginPageContent() {
     const res = await forgotPassword(resetEmail);
     setIsLoading(false);
 
-    if (res.status === "success") {
+    if (res.status === "success" || res.status === 1 || res.status === "1" || res.success === true) {
       setShowForgotPasswordModal(false);
       setEmailAddress(resetEmail);
       setSuccessMessage(res.message || "A password reset OTP has been sent to your email.");
@@ -237,7 +270,7 @@ function LoginPageContent() {
     });
     setIsLoading(false);
 
-    if (res.status === "success") {
+    if (res.status === "success" || res.status === 1 || res.status === "1" || res.success === true) {
       setShowResetPasswordModal(false);
       setSuccessMessage(res.message || "Password has been reset successfully. Please sign in with your new password.");
       setAuthMode("signin");
@@ -246,6 +279,10 @@ function LoginPageContent() {
       setErrorMessage(res.message || "Failed to reset password. Please check your OTP code and try again.");
     }
   };
+
+  if (checkingAuth) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-[#f8f9fa] flex flex-col justify-between">

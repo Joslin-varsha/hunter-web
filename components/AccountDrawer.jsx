@@ -89,13 +89,14 @@ export default function AccountDrawer({ isOpen, onClose }) {
               </div>
 
               {/* Login / Register Trigger */}
-              <button
-                onClick={() => login("Alex Morgan", "alex.morgan@example.com")}
+              <Link
+                href="/login"
+                onClick={onClose}
                 className="w-full bg-black text-white py-3 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-gray-800 transition shadow-md flex items-center justify-center gap-2"
               >
                 <FiLogIn className="w-4 h-4" />
                 <span>Login / Register</span>
-              </button>
+              </Link>
             </div>
           )}
         </div>

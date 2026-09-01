@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FiTrash2,
   FiShoppingBag,
@@ -12,6 +12,7 @@ import {
   FiLock,
   FiTruck,
   FiX,
+  FiArrowLeft,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
@@ -21,6 +22,7 @@ import { useShop } from "../../context/ShopContext";
 import { allProducts } from "../../data/products";
 
 function CartPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const isBuyNow = searchParams.get("buyNow") === "true";
   const buyNowId = Number(searchParams.get("id"));
@@ -101,14 +103,25 @@ function CartPageContent() {
   };
 
   return (
-    <main className="min-h-screen bg-white pb-28 lg:pb-12">
+    <main className="min-h-screen bg-white pb-28 lg:pb-0">
       <TopBar />
       <Navbar />
 
       {/* Clean Minimalist Header */}
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-10 pb-6 border-b border-gray-100 flex items-baseline justify-between">
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-10 pb-4 sm:pb-6 border-b border-gray-100 flex items-baseline justify-between">
         <div>
-          <p className="text-[10px] sm:text-xs uppercase tracking-[3px] text-gray-500 font-bold mb-1">
+          {/* Mobile View: Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="sm:hidden inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:text-gray-600 transition active:scale-95 mb-1.5"
+            aria-label="Go Back"
+          >
+            <FiArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+
+          {/* Desktop Tag */}
+          <p className="hidden sm:block text-[10px] sm:text-xs uppercase tracking-[3px] text-gray-500 font-bold mb-1">
             {isBuyNow ? "Instant Direct Checkout" : "Shopping Bag"}
           </p>
           <h1 className="text-2xl sm:text-4xl font-black text-black tracking-tight uppercase">

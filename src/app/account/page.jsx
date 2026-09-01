@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FiUser,
   FiPackage,
@@ -14,6 +15,7 @@ import {
   FiHeart,
   FiShoppingBag,
   FiAward,
+  FiArrowLeft,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
@@ -22,6 +24,7 @@ import MobileBottomNav from "../../../components/MobileBottomNav";
 import { useShop } from "../../context/ShopContext";
 
 export default function AccountPage() {
+  const router = useRouter();
   const {
     user,
     logout,
@@ -36,14 +39,25 @@ export default function AccountPage() {
   const cartCount = getCartCount();
 
   return (
-    <main className="min-h-screen bg-white pb-24 lg:pb-12">
+    <main className="min-h-screen bg-white pb-24 lg:pb-0">
       <TopBar />
       <Navbar />
 
       {/* Header */}
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-4 border-b border-gray-100 flex items-baseline justify-between">
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-0.5">
+          {/* Mobile View: Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="sm:hidden inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:text-gray-600 transition active:scale-95 mb-1.5"
+            aria-label="Go Back"
+          >
+            <FiArrowLeft className="w-4 h-4 stroke-[2.5]" />
+            <span>Back</span>
+          </button>
+
+          {/* Desktop View: Breadcrumb Navigation */}
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 mb-0.5">
             <Link href="/" className="hover:text-black transition">
               Home
             </Link>
