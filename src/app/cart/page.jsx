@@ -196,20 +196,29 @@ function CartPageContent() {
 
               {/* Items List */}
               <div className="divide-y divide-gray-100">
-                {displayItems.map((item) => (
-                  <div
-                    key={item.cartItemId}
-                    className="py-4 flex gap-4 sm:gap-6 items-center justify-between"
-                  >
-                    {/* Item Image */}
-                    <div className="relative w-20 h-24 sm:w-24 sm:h-32 rounded-2xl overflow-hidden bg-[#f6f6f6] flex-shrink-0 border border-gray-100">
-                      <Image
-                        src={item.product.image}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                {displayItems.map((item) => {
+                  const itemImg =
+                    item.product?.image ||
+                    item.product?.cover_image_url ||
+                    (item.product?.cover_image_path
+                      ? item.product.cover_image_path.startsWith("http")
+                        ? item.product.cover_image_path
+                        : `https://meetay.com/${item.product.cover_image_path}`
+                      : "/images/banner.jpg");
+
+                  return (
+                    <div
+                      key={item.cartItemId}
+                      className="py-4 flex gap-4 sm:gap-6 items-center justify-between"
+                    >
+                      {/* Item Image */}
+                      <div className="relative w-20 h-24 sm:w-24 sm:h-32 rounded-2xl overflow-hidden bg-[#f6f6f6] flex-shrink-0 border border-gray-100">
+                        <img
+                          src={itemImg}
+                          alt={item.product?.name || "Product"}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
 
                     {/* Details */}
                     <div className="flex-1 min-w-0">
@@ -258,7 +267,7 @@ function CartPageContent() {
                     {/* Price & Remove */}
                     <div className="flex flex-col items-end gap-3">
                       <span className="text-xs sm:text-base font-black text-black">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ₹{(item.price * item.quantity).toLocaleString("en-IN")}
                       </span>
                       {!item.isBuyNowItem && (
                         <button
@@ -271,7 +280,8 @@ function CartPageContent() {
                       )}
                     </div>
                   </div>
-                ))}
+                );
+              })}
               </div>
             </div>
 

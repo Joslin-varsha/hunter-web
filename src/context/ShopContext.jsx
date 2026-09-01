@@ -238,13 +238,24 @@ if (savedUser && validToken) {
     );
   };
 
-  // Wishlist operations
-  const toggleWishlist = (productId) => {
+  // Wishlist operations (supports both product objects and primitive IDs)
+  const toggleWishlist = (productOrId) => {
+    if (!productOrId) return;
     setWishlist((prev) => {
-      if (prev.includes(productId)) {
-        return prev.filter((id) => id !== productId);
+      const targetId = typeof productOrId === "object" ? (productOrId.id || productOrId.slug) : productOrId;
+
+      const exists = prev.some((item) => {
+        const itemId = typeof item === "object" ? (item.id || item.slug) : item;
+        return String(itemId) === String(targetId);
+      });
+
+      if (exists) {
+        return prev.filter((item) => {
+          const itemId = typeof item === "object" ? (item.id || item.slug) : item;
+          return String(itemId) !== String(targetId);
+        });
       } else {
-        return [...prev, productId];
+        return [...prev, productOrId];
       }
     });
   };
@@ -269,8 +280,12 @@ if (savedUser && validToken) {
   };
 
   // Check if product is in wishlist
-  const isInWishlist = (productId) => {
-    return wishlist.includes(productId);
+  const isInWishlist = (productIdOrSlug) => {
+    if (!productIdOrSlug) return false;
+    return wishlist.some((item) => {
+      const itemId = typeof item === "object" ? (item.id || item.slug) : item;
+      return String(itemId) === String(productIdOrSlug);
+    });
   };
 
   // Clear cart

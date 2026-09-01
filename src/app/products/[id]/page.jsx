@@ -95,10 +95,18 @@ export default function ProductDetailPage({ params }) {
         if (res.data.variants && res.data.variants.length > 0) {
           setVariants(res.data.variants);
           const firstInStockVariant = res.data.variants.find((v) => Number(v.stock) > 0);
-          setSelectedSize(firstInStockVariant ? firstInStockVariant.variant : "");
+          setSelectedSize(firstInStockVariant ? firstInStockVariant.variant : res.data.variants[0].variant);
         } else {
-          setVariants([]);
-          setSelectedSize("");
+          const cat = (prodData.category || prodData.category_name || prodData.name || "").toLowerCase();
+          let defaultSizes = ["S", "M", "L", "XL"];
+          if (cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short")) {
+            defaultSizes = ["28", "30", "32", "34", "36"];
+          } else if (cat.includes("cap") || cat.includes("hat") || cat.includes("watch") || cat.includes("accessory")) {
+            defaultSizes = ["Adjustable"];
+          }
+          const generated = defaultSizes.map((s, i) => ({ id: `def-${i}`, variant: s, stock: 10 }));
+          setVariants(generated);
+          setSelectedSize(defaultSizes[0]);
         }
 
         // Product gallery images
@@ -257,7 +265,7 @@ export default function ProductDetailPage({ params }) {
 
               {/* Wishlist Floating Button */}
               <button
-                onClick={() => toggleWishlist(liveProduct.id)}
+                onClick={() => toggleWishlist({ ...liveProduct, selectedSize })}
                 className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md transition-all shadow-md active:scale-95 ${
                   isSaved
                     ? "bg-red-500 text-white"
