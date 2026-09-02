@@ -39,15 +39,29 @@ export default function OrderHistoryPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Fetch API orders on page / limit change
   useEffect(() => {
     loadApiOrders({ page, limit });
   }, [page, limit]);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadApiOrders({ page, limit });
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 500);
+  };
+
   const handleReorder = (item) => {
-    if (item && item.product) {
-      addToCart(item.product, item.selectedSize || "M", item.quantity || 1);
-    }
+    const productToAdd = item.product || {
+      id: item.product_id || item.id,
+      name: item.name || item.product_name || "Streetwear Item",
+      price: item.price || item.product_price || 0,
+      image: item.image || item.cover_image_url || "/placeholder.png",
+    };
+    addToCart(productToAdd, item.selectedSize || "M", item.quantity || 1);
   };
 
   // Status badge styling helper
@@ -56,10 +70,10 @@ export default function OrderHistoryPage() {
     if (status.includes("deliver") || status.includes("complet")) {
       return "bg-emerald-100 text-emerald-800 border-emerald-200";
     }
-    if (status.includes("ship") || status.includes("pick")) {
+    if (status.includes("ship") || status.includes("pick") || status.includes("transit")) {
       return "bg-blue-100 text-blue-800 border-blue-200";
     }
-    if (status.includes("cancel") || status.includes("fail")) {
+    if (status.includes("cancel") || status.includes("fail") || status.includes("reject")) {
       return "bg-rose-100 text-rose-800 border-rose-200";
     }
     return "bg-amber-100 text-amber-800 border-amber-200";
@@ -75,48 +89,51 @@ export default function OrderHistoryPage() {
       <Navbar />
 
       {/* Clean Minimalist Header */}
-      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 sm:pt-8 pb-4 sm:pb-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          {/* Mobile View: Back Button */}
-          <button
-            onClick={() => router.back()}
-            className="sm:hidden inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-black hover:text-gray-600 transition active:scale-95 mb-1.5"
-            aria-label="Go Back"
-          >
-            <FiArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Back</span>
-          </button>
+      <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-3 sm:pt-8 pb-3 sm:pb-5 border-b border-gray-100">
+        {/* Mobile View: Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-black text-[11px] font-extrabold uppercase tracking-wider hover:bg-gray-200 transition active:scale-95 mb-2"
+          aria-label="Go Back"
+        >
+          <FiArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>Back</span>
+        </button>
 
-          {/* Desktop View: Breadcrumb Navigation */}
-          <div className="hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 mb-0.5">
-            <Link href="/" className="hover:text-black transition">
-              Home
-            </Link>
-            <span>/</span>
-            <span className="text-black font-semibold">Order History</span>
-          </div>
-          <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight uppercase">
-            My Orders <span className="text-gray-400 font-medium text-sm sm:text-2xl">({totalOrdersCount})</span>
-          </h1>
+        {/* Desktop View: Breadcrumb Navigation */}
+        <div className="hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 mb-0.5">
+          <Link href="/" className="hover:text-black transition">
+            Home
+          </Link>
+          <span>/</span>
+          <span className="text-black font-semibold">Order History</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => loadApiOrders({ page, limit })}
-            disabled={isOrdersLoading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-gray-200 hover:border-black text-xs font-bold uppercase tracking-wider text-black transition active:scale-95 disabled:opacity-50"
-            title="Refresh Orders"
-          >
-            <FiRefreshCw className={`w-3.5 h-3.5 ${isOrdersLoading ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
-          </button>
+        {/* Title + Refresh Header Bar */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-lg sm:text-3xl font-black text-black tracking-tight uppercase">
+            My Orders <span className="text-gray-400 font-medium text-sm sm:text-2xl">({totalOrdersCount})</span>
+          </h1>
 
-          <Link
-            href="/products"
-            className="text-xs font-bold uppercase tracking-wider text-black underline hover:opacity-75 transition hidden sm:inline"
-          >
-            + Explore Catalog
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={isOrdersLoading || isRefreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-gray-100 hover:bg-black text-black hover:text-white border border-gray-200 transition text-[11px] sm:text-xs font-bold uppercase tracking-wider active:scale-95 disabled:opacity-50 shadow-sm"
+              title="Refresh Orders"
+              aria-label="Refresh Orders"
+            >
+              <FiRefreshCw className={`w-3.5 h-3.5 ${isOrdersLoading || isRefreshing ? "animate-spin text-inherit" : ""}`} />
+              <span>{isOrdersLoading || isRefreshing ? "Refreshing..." : "Refresh"}</span>
+            </button>
+
+            <Link
+              href="/products"
+              className="text-xs font-bold uppercase tracking-wider text-black underline hover:opacity-75 transition hidden sm:inline"
+            >
+              + Explore Catalog
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -151,9 +168,9 @@ export default function OrderHistoryPage() {
           /* Orders List */
           <div className="space-y-4 sm:space-y-6">
             {displayOrders.map((order, idx) => {
-              const orderId = order.product_order_id || order.orderId || `ORD-${order.id || idx + 1}`;
-              const orderStatus = order.product_order_status || order.status || "Pending";
-              const rawDate = order.order_date || order.date || order.created_at;
+              const orderId = order.product_order_id || order.id || `ORD-${idx + 1}`;
+              const orderStatus = order.product_order_status || (order.delivered_status === 1 ? "Delivered" : "Placed");
+              const rawDate = order.order_date || order.created_at;
               const formattedDate = rawDate
                 ? new Date(rawDate).toLocaleDateString("en-US", {
                     month: "short",
@@ -162,29 +179,8 @@ export default function OrderHistoryPage() {
                   })
                 : "Recent";
 
-              const grandTotal =
-                order.final_price !== undefined && order.final_price !== null
-                  ? order.final_price
-                  : order.grandTotal || order.product_price || 0;
-
-              const orderItems =
-                order.items && order.items.length > 0
-                  ? order.items
-                  : [
-                      {
-                        cartItemId: `item-${order.id || idx}`,
-                        product: {
-                          id: order.product_id || order.id,
-                          name: `Product Drop #${order.product_id || order.id || "101"}`,
-                          price: order.product_price || grandTotal,
-                          category: "HUNTER Streetwear",
-                          image: "/placeholder.png",
-                        },
-                        selectedSize: "M",
-                        quantity: 1,
-                        price: order.product_price || grandTotal,
-                      },
-                    ];
+              const grandTotal = order.final_price !== undefined && order.final_price !== null ? order.final_price : order.product_price || 0;
+              const orderItems = order.items || [];
 
               return (
                 <div
@@ -200,10 +196,10 @@ export default function OrderHistoryPage() {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Link
-                            href={`/orders/${order.id || order.product_order_id || orderId}`}
+                            href={`/orders/${order.id || order.product_order_id}`}
                             className="text-xs sm:text-sm font-black text-black uppercase tracking-wider hover:underline hover:text-purple-700 transition"
                           >
-                            Order #{orderId}
+                            Order #{order.product_order_id || order.id}
                           </Link>
                           <span
                             className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getStatusBadge(
@@ -231,60 +227,72 @@ export default function OrderHistoryPage() {
 
                   {/* Order Items List */}
                   <div className="p-3.5 sm:p-6 divide-y divide-gray-200">
-                    {orderItems.map((item, itemIdx) => (
-                      <div
-                        key={item.cartItemId || itemIdx}
-                        className="py-3 sm:py-4 flex items-center justify-between gap-3"
-                      >
-                        {/* Item Image & Specs */}
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                          <div className="relative w-14 h-16 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden bg-white border border-gray-200 flex-shrink-0">
-                            <Image
-                              src={item.product?.image || item.product?.cover_image_url || "/placeholder.png"}
-                              alt={item.product?.name || "Product"}
-                              fill
-                              className="object-cover"
-                            />
+                    {orderItems.map((item, itemIdx) => {
+                      const itemPrice = Number(item.price || 0);
+                      const itemQty = Number(item.quantity || 1);
+                      const itemTotal = itemPrice * itemQty;
+                      const imgSrc = item.image
+                        ? (item.image.startsWith("http") ? item.image : `https://meetay.com/${item.image.startsWith("/") ? item.image.slice(1) : item.image}`)
+                        : "/placeholder.png";
+
+                      return (
+                        <div
+                          key={item.variant_id || item.product_id || itemIdx}
+                          className="py-3 sm:py-4 flex items-center justify-between gap-3"
+                        >
+                          {/* Item Image & Specs */}
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                            <div className="relative w-14 h-16 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden bg-white border border-gray-200 flex-shrink-0">
+                              <Image
+                                src={imgSrc}
+                                alt={item.name || "Product"}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h4 className="text-xs sm:text-sm font-extrabold text-black line-clamp-2 leading-tight">
+                                {item.name}
+                              </h4>
+                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                {item.variant_name && (
+                                  <span className="text-[10px] sm:text-[11px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md">
+                                    Size: <strong className="text-black font-extrabold">{item.variant_name}</strong>
+                                  </span>
+                                )}
+                                <span className="text-[10px] sm:text-[11px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-md">
+                                  Qty: <strong className="text-black font-extrabold">{itemQty}</strong>
+                                </span>
+                              </div>
+                              <span className="text-xs sm:text-sm font-black text-black mt-1 block">
+                                ₹{itemTotal.toLocaleString("en-IN")}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 truncate">
-                              {item.product?.category || "HUNTER"}
-                            </p>
-                            <h4 className="text-xs sm:text-sm font-extrabold text-black line-clamp-2 leading-tight">
-                              {item.product?.name || "Streetwear Item"}
-                            </h4>
-                            <p className="text-[11px] sm:text-xs text-gray-600 font-semibold mt-1">
-                              Size: <span className="font-extrabold text-black">{item.selectedSize || "Standard"}</span> | Qty:{" "}
-                              <span className="font-extrabold text-black">{item.quantity || 1}</span>
-                            </p>
-                            <span className="text-xs sm:text-sm font-black text-black mt-1 block">
-                              ₹{((item.price || grandTotal) * (item.quantity || 1)).toLocaleString("en-IN")}
-                            </span>
+                          {/* Actions */}
+                          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 flex-shrink-0">
+                            <Link
+                              href={`/orders/${order.id || order.product_order_id}`}
+                              className="inline-flex items-center gap-1 bg-gray-100 hover:bg-black hover:text-white text-black border border-gray-200 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition active:scale-95 shadow-sm"
+                            >
+                              <span>View Details</span>
+                              <FiArrowRight className="w-3 h-3" />
+                            </Link>
+
+                            <Link
+                              href="/cart"
+                              onClick={() => handleReorder(item)}
+                              className="inline-flex items-center gap-1 bg-black text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider hover:bg-gray-800 transition active:scale-95 shadow"
+                            >
+                              <FiRefreshCw className="w-3 h-3" />
+                              <span>Buy Again</span>
+                            </Link>
                           </div>
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 flex-shrink-0">
-                          <Link
-                            href={`/orders/${order.id || order.product_order_id || orderId}`}
-                            className="inline-flex items-center gap-1 bg-gray-100 hover:bg-black hover:text-white text-black border border-gray-200 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition active:scale-95 shadow-sm"
-                          >
-                            <span>View Details</span>
-                            <FiArrowRight className="w-3 h-3" />
-                          </Link>
-
-                          <Link
-                            href="/cart"
-                            onClick={() => handleReorder(item)}
-                            className="inline-flex items-center gap-1 bg-black text-white px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider hover:bg-gray-800 transition active:scale-95 shadow"
-                          >
-                            <FiRefreshCw className="w-3 h-3" />
-                            <span>Buy Again</span>
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Order Footer Breakdown */}
@@ -292,12 +300,15 @@ export default function OrderHistoryPage() {
                     <span className="flex items-center gap-2 font-medium">
                       <FiCreditCard className="w-3.5 h-3.5 text-black flex-shrink-0" />
                       <span>
-                        Payment: {order.payment_type || order.paymentMethod || "Prepaid"}
+                        Payment: <strong className="text-black">{order.payment_type || "Prepaid"}</strong> ({order.payment_status || "Paid"})
                       </span>
                     </span>
-                    {(order.delivery_price > 0 || order.tax_price > 0) && (
-                      <span className="font-semibold text-gray-500">
-                        Delivery: ₹{order.delivery_price || 0} | Tax: ₹{order.tax_price || 0} ({order.tax_in_percentage || 0}%)
+
+                    {(Number(order.delivery_price) > 0 || Number(order.tax_price) > 0) && (
+                      <span className="text-gray-500 font-medium">
+                        {Number(order.delivery_price) > 0 && `Delivery: ₹${order.delivery_price}`}
+                        {Number(order.delivery_price) > 0 && Number(order.tax_price) > 0 && " | "}
+                        {Number(order.tax_price) > 0 && `Tax: ₹${order.tax_price} (${order.tax_in_percentage || 0}%)`}
                       </span>
                     )}
                   </div>
@@ -305,50 +316,61 @@ export default function OrderHistoryPage() {
               );
             })}
 
-            {/* Pagination Controls Bar */}
-            <div className="mt-8 pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-xs text-gray-500 font-semibold">
-                Showing Page <span className="font-black text-black">{page}</span> of{" "}
-                <span className="font-black text-black">{totalPages}</span> ({totalOrdersCount} Total Orders)
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1 || isOrdersLoading}
-                  className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
-                >
-                  <FiChevronLeft className="w-4 h-4" />
-                  <span>Prev</span>
-                </button>
-
-                {/* Page Number Buttons */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      className={`w-8 h-8 rounded-full text-xs font-black transition ${
-                        pageNum === page
-                          ? "bg-black text-white shadow"
-                          : "bg-gray-100 text-black hover:bg-gray-200"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
+            {/* Pagination Controls Bar (Only displayed when more than 1 page exists) */}
+            {totalPages > 1 && (
+              <div className="mt-8 pt-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-500 font-semibold text-center sm:text-left">
+                  Page <span className="font-black text-black">{page}</span> of{" "}
+                  <span className="font-black text-black">{totalPages}</span> ({totalOrdersCount} orders)
                 </div>
 
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages || isOrdersLoading}
-                  className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
-                >
-                  <span>Next</span>
-                  <FiChevronRight className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      setPage((p) => Math.max(1, p - 1));
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={page <= 1 || isOrdersLoading}
+                    className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                  >
+                    <FiChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev</span>
+                  </button>
+
+                  {/* Page Number Buttons */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => {
+                          setPage(pageNum);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className={`w-8 h-8 rounded-full text-xs font-black transition ${
+                          pageNum === page
+                            ? "bg-black text-white shadow"
+                            : "bg-gray-100 text-black hover:bg-gray-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setPage((p) => Math.min(totalPages, p + 1));
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={page >= totalPages || isOrdersLoading}
+                    className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                  >
+                    <span>Next</span>
+                    <FiChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

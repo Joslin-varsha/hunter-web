@@ -77,26 +77,24 @@ export function ShopProvider({ children }) {
   }, []);
 
   // Load from localStorage on mount
- // Load from localStorage on mount
-useEffect(() => {
-  try {
-    const savedCart = localStorage.getItem("hunter_cart");
-    const savedWishlist = localStorage.getItem("hunter_wishlist");
-    const savedOrders = localStorage.getItem("hunter_orders");
-    const savedUser = localStorage.getItem("hunter_user");
-    const savedToken = getSecureToken();
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedCart = localStorage.getItem("hunter_cart");
+      const savedWishlist = localStorage.getItem("hunter_wishlist");
+      const savedUser = localStorage.getItem("hunter_user");
+      const savedToken = getSecureToken();
 
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+      // Ensure hunter_orders is cleaned up from localStorage
+      localStorage.removeItem("hunter_orders");
 
-    if (savedWishlist) {
-      setWishlist(JSON.parse(savedWishlist));
-    }
+      if (savedCart) {
+        setCart(JSON.parse(savedCart));
+      }
 
-    if (savedOrders) {
-      setOrders(JSON.parse(savedOrders));
-    }
+      if (savedWishlist) {
+        setWishlist(JSON.parse(savedWishlist));
+      }
 
     // -----------------------------
     // RESTORE AUTHENTICATION
@@ -193,16 +191,6 @@ useEffect(() => {
       console.error("Failed to save wishlist to localStorage:", error);
     }
   }, [wishlist, isLoaded]);
-
-  // Sync orders to localStorage
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
-      localStorage.setItem("hunter_orders", JSON.stringify(orders));
-    } catch (error) {
-      console.error("Failed to save orders to localStorage:", error);
-    }
-  }, [orders, isLoaded]);
 
   // Sync user to localStorage (without token property)
   useEffect(() => {

@@ -26,7 +26,7 @@ import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import MobileBottomNav from "../../../components/MobileBottomNav";
 import { useShop } from "../../context/ShopContext";
-import { registerCustomer, loginCustomer, verifyOTP, forgotPassword, resetPassword, setSecureToken } from "../../utils/api";
+import { registerCustomer, loginCustomer, verifyOTP, forgotPassword, resetPassword, setSecureToken, getSecureToken } from "../../utils/api";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -41,27 +41,28 @@ function LoginPageContent() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("hunter_token") : null;
-      const isValidToken =
-        token &&
-        typeof token === "string" &&
-        token.trim() !== "" &&
-        token !== "undefined" &&
-        token !== "null";
+    const token = getSecureToken();
+    const isValidToken =
+      token &&
+      typeof token === "string" &&
+      token.trim() !== "" &&
+      token !== "undefined" &&
+      token !== "null";
 
-      if (isValidToken || user?.isLoggedIn === true) {
-        if (typeof window !== "undefined") {
-          window.location.replace(redirectPath);
-        }
-        return;
+    if (isValidToken || user?.isLoggedIn === true) {
+      const target = redirectPath && redirectPath !== "/login" && redirectPath !== "/register" ? redirectPath : "/";
+      if (typeof window !== "undefined") {
+        window.location.replace(target);
+      } else {
+        router.replace(target);
       }
-    } catch (e) {}
+      return;
+    }
 
     if (isLoaded) {
       setCheckingAuth(false);
     }
-  }, [isLoaded, user?.isLoggedIn, redirectPath]);
+  }, [isLoaded, user?.isLoggedIn, redirectPath, router]);
 
   // Mode: "signin" | "register"
   const [authMode, setAuthMode] = useState("signin");
@@ -281,7 +282,19 @@ function LoginPageContent() {
   };
 
   if (checkingAuth) {
-    return null;
+    return (
+      <main className="min-h-screen bg-[#f8f9fa] flex flex-col justify-between">
+        <div>
+          <TopBar />
+          <Navbar />
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center py-24">
+          <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-xs uppercase tracking-widest font-black text-gray-500">Checking Account Status...</p>
+        </div>
+        <Footer />
+      </main>
+    );
   }
 
   return (

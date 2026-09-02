@@ -70,7 +70,7 @@ export function getAuthHeaders(customHeaders = {}) {
   const token = getSecureToken();
   if (token && typeof token === "string" && token.trim() !== "" && token !== "undefined" && token !== "null") {
     const cleanToken = token.trim();
-    headers["Authorization"] = cleanToken.startsWith("Bearer ") ? cleanToken : `Bearer ${cleanToken}`;
+    headers["authorization"] = cleanToken.startsWith("Bearer ") ? cleanToken : `Bearer ${cleanToken}`;
   }
   return headers;
 }
@@ -454,10 +454,10 @@ export async function processOrder(orderPayload) {
   try {
     const response = await fetch(`${BASE_URL}/customer/order/process/${STORE_SLUG}`, {
       method: "POST",
-      headers: {
+      headers: getAuthHeaders({
         "Content-Type": "application/json",
         "Accept": "application/json",
-      },
+      }),
       body: JSON.stringify(orderPayload),
     });
 
