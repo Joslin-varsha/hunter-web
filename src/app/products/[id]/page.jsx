@@ -11,6 +11,8 @@ import {
   FiTruck,
   FiRefreshCw,
   FiShield,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import TopBar from "../../../../components/TopBar";
 import Navbar from "../../../../components/Navbar";
@@ -23,16 +25,15 @@ function formatShortSize(sizeStr) {
   if (!sizeStr) return "";
   const str = String(sizeStr).trim();
   const match = str.match(/^([A-Za-z0-9]+)\(/);
-  if (match) return match[1];
-  return str;
+  return match ? match[1] : str;
 }
 
-export default function ProductDetailPage({ params }) {
-  const resolvedParams = use(params);
-  const productIdOrSlug = resolvedParams.id;
+export default function ProductDetailPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const productIdOrSlug = params.id;
   const router = useRouter();
 
-  const { addToCart, toggleWishlist, isInWishlist } = useShop();
+  const { addToCart, isInWishlist, toggleWishlist } = useShop();
 
   const [liveProduct, setLiveProduct] = useState(null);
   const [variants, setVariants] = useState([]);
@@ -45,23 +46,39 @@ export default function ProductDetailPage({ params }) {
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showStickyBottomBar, setShowStickyBottomBar] = useState(true);
-  const inlineActionsRef = useRef(null);
+  const relatedProductsRef = useRef(null);
+  const relatedScrollRef = useRef(null);
 
-  // Hide mobile sticky bottom bar when static action buttons at end of product details enter viewport
+  const scrollLeftRelated = () => {
+    if (relatedScrollRef.current) {
+      relatedScrollRef.current.scrollBy({ left: -340, behavior: "smooth" });
+    }
+  };
+
+  const scrollRightRelated = () => {
+    if (relatedScrollRef.current) {
+      relatedScrollRef.current.scrollBy({ left: 340, behavior: "smooth" });
+    }
+  };
+
+  // Show mobile sticky bottom bar on page open, and hide when scrolling down to Related Products section
   useEffect(() => {
-    const targetNode = inlineActionsRef.current;
+    setShowStickyBottomBar(true);
+
+    const targetNode = relatedProductsRef.current;
     if (!targetNode) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // Hide mobile sticky bar when Related Drops enters viewport
         setShowStickyBottomBar(!entry.isIntersecting);
       },
-      { threshold: 0.1 }
+      { threshold: 0.05 }
     );
 
     observer.observe(targetNode);
     return () => observer.disconnect();
-  }, [liveProduct]);
+  }, [liveProduct, relatedProductsList]);
 
   // Fetch live product data from GET /hunter-mens-wear/product/{slug}
   useEffect(() => {
@@ -92,21 +109,13 @@ export default function ProductDetailPage({ params }) {
         setLiveProduct(prodData);
 
         // Populate size variants & auto-select first in-stock variant
-        if (res.data.variants && res.data.variants.length > 0) {
+        if (Array.isArray(res.data.variants) && res.data.variants.length > 0) {
           setVariants(res.data.variants);
           const firstInStockVariant = res.data.variants.find((v) => Number(v.stock) > 0);
           setSelectedSize(firstInStockVariant ? firstInStockVariant.variant : res.data.variants[0].variant);
         } else {
-          const cat = (prodData.category || prodData.category_name || prodData.name || "").toLowerCase();
-          let defaultSizes = ["S", "M", "L", "XL"];
-          if (cat.includes("pant") || cat.includes("jean") || cat.includes("bottom") || cat.includes("short")) {
-            defaultSizes = ["28", "30", "32", "34", "36"];
-          } else if (cat.includes("cap") || cat.includes("hat") || cat.includes("watch") || cat.includes("accessory")) {
-            defaultSizes = ["Adjustable"];
-          }
-          const generated = defaultSizes.map((s, i) => ({ id: `def-${i}`, variant: s, stock: 10 }));
-          setVariants(generated);
-          setSelectedSize(defaultSizes[0]);
+          setVariants([]);
+          setSelectedSize("");
         }
 
         // Product gallery images
@@ -119,6 +128,14 @@ export default function ProductDetailPage({ params }) {
         // Related products
         if (res.data.related_products) {
           setRelatedProductsList(res.data.related_products);
+        }
+      } else {
+        // Fallback for 500 API errors: find product in local catalog
+        const fallbackProd = allProducts.find(
+          (p) => String(p.slug) === String(productIdOrSlug) || String(p.id) === String(productIdOrSlug)
+        );
+        if (fallbackProd) {
+          setLiveProduct(fallbackProd);
         }
       }
       setIsLoading(false);
@@ -166,7 +183,9 @@ export default function ProductDetailPage({ params }) {
   }
 
   const isSaved = isInWishlist(liveProduct.id);
-  const imgUrl = liveProduct.cover_image_url || (liveProduct.cover_image_path ? `https://meetay.com/${liveProduct.cover_image_path}` : "");
+  const imgUrl =
+    (liveProduct.cover_image_url && liveProduct.cover_image_url.trim() !== "" ? liveProduct.cover_image_url : null) ||
+    (liveProduct.cover_image_path && liveProduct.cover_image_path.trim() !== "" ? `https://meetay.com/${liveProduct.cover_image_path}` : null);
   const formattedPrice = `₹${(liveProduct.sale_price || liveProduct.price || 0).toLocaleString("en-IN")}`;
   const formattedOriginalPrice = liveProduct.price > (liveProduct.sale_price || 0) ? `₹${liveProduct.price.toLocaleString("en-IN")}` : null;
 
@@ -250,11 +269,18 @@ export default function ProductDetailPage({ params }) {
           {/* Left Column: Product Image Gallery */}
           <div className="lg:col-span-5 flex flex-col items-center gap-4">
             <div className="relative aspect-square sm:aspect-[3/4] w-full max-w-[450px] rounded-3xl overflow-hidden bg-[#f6f6f6] shadow-md border border-gray-100 group">
-              <img
-                src={imgUrl}
-                alt={liveProduct.name}
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-              />
+              {imgUrl ? (
+                <img
+                  src={imgUrl}
+                  alt={liveProduct.name || "Product"}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400 p-6 text-center">
+                  <FiShoppingBag className="w-12 h-12 mb-2 opacity-40" />
+                  <span className="text-xs font-black uppercase tracking-widest text-gray-400">HUNTER Streetwear</span>
+                </div>
+              )}
 
               {/* Tag Badge */}
               {liveProduct.trending === 1 && (
@@ -457,7 +483,7 @@ export default function ProductDetailPage({ params }) {
                 const isAllOutOfStock = Array.isArray(variants) && variants.length > 0 && variants.every((v) => Number(v.stock) <= 0);
 
                 return (
-                  <div ref={inlineActionsRef} className="lg:hidden grid grid-cols-2 gap-3 my-6 pt-4 border-t border-gray-100">
+                  <div className="lg:hidden grid grid-cols-2 gap-3 my-6 pt-4 border-t border-gray-100">
                     <button
                       disabled={isAllOutOfStock}
                       onClick={handleAddToCart}
@@ -489,13 +515,14 @@ export default function ProductDetailPage({ params }) {
       </div>
 
       {/* Related Products Section */}
-      {relatedProductsList.length > 0 && (
+      {relatedProductsList.length > 0 ? (
         <section
+          ref={relatedProductsRef}
           id="related-drops-section"
           className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 pt-12 border-t border-gray-100"
         >
           <ScrollReveal direction="up">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="uppercase tracking-[4px] text-xs text-gray-400 font-bold mb-1">
                   YOU MAY ALSO LIKE
@@ -504,31 +531,59 @@ export default function ProductDetailPage({ params }) {
                   Related Drops
                 </h2>
               </div>
-              <Link
-                href="/products"
-                className="text-xs sm:text-sm font-black text-gray-700 hover:text-black uppercase tracking-[2px] transition"
-              >
-                VIEW ALL →
-              </Link>
+
+              {/* Left / Right Scroll Navigation Buttons (Desktop Only) */}
+              <div className="hidden lg:flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={scrollLeftRelated}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 hover:bg-black hover:text-white text-black flex items-center justify-center transition active:scale-95 shadow-sm"
+                  aria-label="Scroll Left"
+                  title="Previous"
+                >
+                  <FiChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollRightRelated}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 hover:bg-black hover:text-white text-black flex items-center justify-center transition active:scale-95 shadow-sm"
+                  aria-label="Scroll Right"
+                  title="Next"
+                >
+                  <FiChevronRight className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {relatedProductsList.slice(0, 4).map((rel) => {
-                const relImg = rel.cover_image_url || (rel.cover_image_path ? `https://meetay.com/${rel.cover_image_path}` : "");
+            <div
+              ref={relatedScrollRef}
+              className="grid grid-cols-2 gap-3.5 sm:gap-4 lg:flex lg:items-center lg:gap-6 lg:overflow-x-auto lg:pb-4 lg:pt-1 lg:scrollbar-none lg:snap-x lg:snap-mandatory lg:scroll-smooth"
+            >
+              {relatedProductsList.map((rel) => {
+                const relImg =
+                  (rel.cover_image_url && rel.cover_image_url.trim() !== "" ? rel.cover_image_url : null) ||
+                  (rel.cover_image_path && rel.cover_image_path.trim() !== "" ? `https://meetay.com/${rel.cover_image_path}` : null);
                 const relPrice = `₹${(rel.sale_price || rel.price || 0).toLocaleString("en-IN")}`;
 
                 return (
                   <Link
                     key={rel.id}
                     href={`/products/${rel.slug || rel.id}`}
-                    className="group cursor-pointer flex flex-col rounded-2xl bg-white border border-gray-100 p-2.5 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl"
+                    className="group cursor-pointer flex flex-col rounded-2xl bg-white border border-gray-100 p-2.5 transition-all duration-500 hover:-translate-y-1.5 hover:shadow-xl w-full lg:w-[270px] lg:flex-shrink-0 lg:snap-start"
                   >
                     <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#f6f6f6] flex items-center justify-center">
-                      <img
-                        src={relImg}
-                        alt={rel.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
+                      {relImg ? (
+                        <img
+                          src={relImg}
+                          alt={rel.name || "Product"}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-300 p-4 text-center">
+                          <FiShoppingBag className="w-8 h-8 mb-1 opacity-50" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">HUNTER</span>
+                        </div>
+                      )}
                     </div>
                     <div className="pt-3 px-1">
                       <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-1">
@@ -544,6 +599,8 @@ export default function ProductDetailPage({ params }) {
             </div>
           </ScrollReveal>
         </section>
+      ) : (
+        <div ref={relatedProductsRef} className="h-1 w-full" />
       )}
 
       {/* Sticky Mobile Bottom Actions Bar */}

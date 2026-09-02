@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +15,9 @@ import {
   FiCreditCard,
   FiRefreshCw,
   FiArrowLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiAlertCircle,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
@@ -23,11 +27,47 @@ import { useShop } from "../../context/ShopContext";
 
 export default function OrderHistoryPage() {
   const router = useRouter();
-  const { orders, addToCart } = useShop();
+  const {
+    apiOrders,
+    apiOrdersPagination,
+    isOrdersLoading,
+    ordersError,
+    loadApiOrders,
+    addToCart,
+  } = useShop();
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  // Fetch API orders on page / limit change
+  useEffect(() => {
+    loadApiOrders({ page, limit });
+  }, [page, limit]);
 
   const handleReorder = (item) => {
-    addToCart(item.product, item.selectedSize, item.quantity);
+    if (item && item.product) {
+      addToCart(item.product, item.selectedSize || "M", item.quantity || 1);
+    }
   };
+
+  // Status badge styling helper
+  const getStatusBadge = (statusStr) => {
+    const status = (statusStr || "pending").toLowerCase();
+    if (status.includes("deliver") || status.includes("complet")) {
+      return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    }
+    if (status.includes("ship") || status.includes("pick")) {
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    }
+    if (status.includes("cancel") || status.includes("fail")) {
+      return "bg-rose-100 text-rose-800 border-rose-200";
+    }
+    return "bg-amber-100 text-amber-800 border-amber-200";
+  };
+
+  const displayOrders = apiOrders || [];
+  const totalOrdersCount = apiOrdersPagination?.total_orders || displayOrders.length;
+  const totalPages = apiOrdersPagination?.total_pages || Math.ceil(totalOrdersCount / limit) || 1;
 
   return (
     <main className="min-h-screen bg-white pb-28 lg:pb-0">
@@ -56,20 +96,40 @@ export default function OrderHistoryPage() {
             <span className="text-black font-semibold">Order History</span>
           </div>
           <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight uppercase">
-            My Orders <span className="text-gray-400 font-medium text-sm sm:text-2xl">({orders.length})</span>
+            My Orders <span className="text-gray-400 font-medium text-sm sm:text-2xl">({totalOrdersCount})</span>
           </h1>
         </div>
 
-        <Link
-          href="/products"
-          className="text-xs font-bold uppercase tracking-wider text-black underline hover:opacity-75 transition hidden sm:inline"
-        >
-          + Explore Catalog
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => loadApiOrders({ page, limit })}
+            disabled={isOrdersLoading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-gray-200 hover:border-black text-xs font-bold uppercase tracking-wider text-black transition active:scale-95 disabled:opacity-50"
+            title="Refresh Orders"
+          >
+            <FiRefreshCw className={`w-3.5 h-3.5 ${isOrdersLoading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+
+          <Link
+            href="/products"
+            className="text-xs font-bold uppercase tracking-wider text-black underline hover:opacity-75 transition hidden sm:inline"
+          >
+            + Explore Catalog
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-[1550px] mx-auto px-3.5 sm:px-6 lg:px-10 py-4 sm:py-8">
-        {orders.length === 0 ? (
+        {/* Loading State */}
+        {isOrdersLoading ? (
+          <div className="py-20 text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+              Fetching Order History...
+            </p>
+          </div>
+        ) : displayOrders.length === 0 ? (
           /* Empty Order History State */
           <div className="py-16 text-center bg-gray-50 rounded-2xl sm:rounded-3xl border border-dashed border-gray-200 max-w-2xl mx-auto p-6 sm:p-8">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 text-black">
@@ -90,46 +150,88 @@ export default function OrderHistoryPage() {
         ) : (
           /* Orders List */
           <div className="space-y-4 sm:space-y-6">
-            {orders.map((order, idx) => (
-              <div
-                key={order.orderId || idx}
-                className="bg-gray-50 rounded-2xl sm:rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition"
-              >
-                {/* Order Header Bar */}
-                <div className="p-3.5 sm:p-6 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black text-white flex items-center justify-center font-bold flex-shrink-0">
-                      <FiPackage className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs sm:text-sm font-black text-black uppercase tracking-wider">
-                          Order #{order.orderId}
-                        </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                          {order.status || "Processing"}
-                        </span>
+            {displayOrders.map((order, idx) => {
+              const orderId = order.product_order_id || order.orderId || `ORD-${order.id || idx + 1}`;
+              const orderStatus = order.product_order_status || order.status || "Pending";
+              const rawDate = order.order_date || order.date || order.created_at;
+              const formattedDate = rawDate
+                ? new Date(rawDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Recent";
+
+              const grandTotal =
+                order.final_price !== undefined && order.final_price !== null
+                  ? order.final_price
+                  : order.grandTotal || order.product_price || 0;
+
+              const orderItems =
+                order.items && order.items.length > 0
+                  ? order.items
+                  : [
+                      {
+                        cartItemId: `item-${order.id || idx}`,
+                        product: {
+                          id: order.product_id || order.id,
+                          name: `Product Drop #${order.product_id || order.id || "101"}`,
+                          price: order.product_price || grandTotal,
+                          category: "HUNTER Streetwear",
+                          image: "/placeholder.png",
+                        },
+                        selectedSize: "M",
+                        quantity: 1,
+                        price: order.product_price || grandTotal,
+                      },
+                    ];
+
+              return (
+                <div
+                  key={order.id || order.product_order_id || idx}
+                  className="bg-gray-50 rounded-2xl sm:rounded-3xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition"
+                >
+                  {/* Order Header Bar */}
+                  <div className="p-3.5 sm:p-6 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black text-white flex items-center justify-center font-bold flex-shrink-0">
+                        <FiPackage className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <p className="text-[10px] sm:text-[11px] text-gray-500 font-semibold mt-0.5">
-                        Placed on {order.date}
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            href={`/orders/${order.id || order.product_order_id || orderId}`}
+                            className="text-xs sm:text-sm font-black text-black uppercase tracking-wider hover:underline hover:text-purple-700 transition"
+                          >
+                            Order #{orderId}
+                          </Link>
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getStatusBadge(
+                              orderStatus
+                            )}`}
+                          >
+                            {orderStatus}
+                          </span>
+                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-gray-500 font-semibold mt-0.5">
+                          Placed on {formattedDate}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 ml-auto sm:ml-0 text-right">
+                      <div>
+                        <p className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400">Total Amount</p>
+                        <p className="text-sm sm:text-lg font-black text-black">
+                          ₹{Number(grandTotal).toLocaleString("en-IN")}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 ml-auto sm:ml-0">
-                    <div className="text-right">
-                      <p className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400">Total Amount</p>
-                      <p className="text-sm sm:text-lg font-black text-black">
-                        ₹{(order.grandTotal || 0).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order Items List */}
-                <div className="p-3.5 sm:p-6 divide-y divide-gray-200">
-                  {order.items &&
-                    order.items.map((item, itemIdx) => (
+                  {/* Order Items List */}
+                  <div className="p-3.5 sm:p-6 divide-y divide-gray-200">
+                    {orderItems.map((item, itemIdx) => (
                       <div
                         key={item.cartItemId || itemIdx}
                         className="py-3 sm:py-4 flex items-center justify-between gap-3"
@@ -150,20 +252,28 @@ export default function OrderHistoryPage() {
                               {item.product?.category || "HUNTER"}
                             </p>
                             <h4 className="text-xs sm:text-sm font-extrabold text-black line-clamp-2 leading-tight">
-                              {item.product?.name}
+                              {item.product?.name || "Streetwear Item"}
                             </h4>
                             <p className="text-[11px] sm:text-xs text-gray-600 font-semibold mt-1">
-                              Size: <span className="font-extrabold text-black">{item.selectedSize}</span> | Qty:{" "}
-                              <span className="font-extrabold text-black">{item.quantity}</span>
+                              Size: <span className="font-extrabold text-black">{item.selectedSize || "Standard"}</span> | Qty:{" "}
+                              <span className="font-extrabold text-black">{item.quantity || 1}</span>
                             </p>
                             <span className="text-xs sm:text-sm font-black text-black mt-1 block">
-                              ₹{((item.price || 0) * item.quantity).toLocaleString("en-IN")}
+                              ₹{((item.price || grandTotal) * (item.quantity || 1)).toLocaleString("en-IN")}
                             </span>
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 flex-shrink-0">
+                          <Link
+                            href={`/orders/${order.id || order.product_order_id || orderId}`}
+                            className="inline-flex items-center gap-1 bg-gray-100 hover:bg-black hover:text-white text-black border border-gray-200 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition active:scale-95 shadow-sm"
+                          >
+                            <span>View Details</span>
+                            <FiArrowRight className="w-3 h-3" />
+                          </Link>
+
                           <Link
                             href="/cart"
                             onClick={() => handleReorder(item)}
@@ -175,23 +285,70 @@ export default function OrderHistoryPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Order Footer Breakdown */}
+                  <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-100/80 border-t border-gray-200 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 font-medium">
+                      <FiCreditCard className="w-3.5 h-3.5 text-black flex-shrink-0" />
+                      <span>
+                        Payment: {order.payment_type || order.paymentMethod || "Prepaid"}
+                      </span>
+                    </span>
+                    {(order.delivery_price > 0 || order.tax_price > 0) && (
+                      <span className="font-semibold text-gray-500">
+                        Delivery: ₹{order.delivery_price || 0} | Tax: ₹{order.tax_price || 0} ({order.tax_in_percentage || 0}%)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Pagination Controls Bar */}
+            <div className="mt-8 pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs text-gray-500 font-semibold">
+                Showing Page <span className="font-black text-black">{page}</span> of{" "}
+                <span className="font-black text-black">{totalPages}</span> ({totalOrdersCount} Total Orders)
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || isOrdersLoading}
+                  className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                >
+                  <FiChevronLeft className="w-4 h-4" />
+                  <span>Prev</span>
+                </button>
+
+                {/* Page Number Buttons */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`w-8 h-8 rounded-full text-xs font-black transition ${
+                        pageNum === page
+                          ? "bg-black text-white shadow"
+                          : "bg-gray-100 text-black hover:bg-gray-200"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Order Footer Info */}
-                {order.shippingAddress && order.shippingAddress.street && (
-                  <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-100/80 border-t border-gray-200 text-[11px] sm:text-xs text-gray-600 flex flex-wrap items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <FiMapPin className="w-3.5 h-3.5 text-black flex-shrink-0" />
-                      <span>Ship to: {order.shippingAddress.street}, {order.shippingAddress.city}, {order.shippingAddress.state}</span>
-                    </span>
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <FiCreditCard className="w-3.5 h-3.5 text-black flex-shrink-0" />
-                      <span>Paid via: {order.paymentMethod || "Razorpay"}</span>
-                    </span>
-                  </div>
-                )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || isOrdersLoading}
+                  className="px-3.5 py-2 rounded-full bg-gray-100 hover:bg-black hover:text-white disabled:opacity-40 disabled:hover:bg-gray-100 disabled:hover:text-black transition text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                >
+                  <span>Next</span>
+                  <FiChevronRight className="w-4 h-4" />
+                </button>
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
@@ -201,3 +358,4 @@ export default function OrderHistoryPage() {
     </main>
   );
 }
+

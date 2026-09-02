@@ -1,7 +1,25 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { fetchHomeData } from "../utils/api";
+import { fetchHomeData, fetchOrderList, fetchOrderDetails, getSecureToken, setSecureToken, removeSecureToken } from "../utils/api";
+
+function decodeJwtPayload(tokenStr) {
+  try {
+    if (!tokenStr || typeof tokenStr !== "string") return null;
+    const parts = tokenStr.split(".");
+    if (parts.length >= 2) {
+      const payloadBase64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(payloadBase64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    }
+  } catch (e) {}
+  return null;
+}
 
 const ShopContext = createContext();
 
@@ -22,6 +40,17 @@ export function ShopProvider({ children }) {
   const [allApiProducts, setAllApiProducts] = useState([]);
   const [storeInfo, setStoreInfo] = useState(null);
   const [isHomeLoading, setIsHomeLoading] = useState(true);
+
+  // Order List API States
+  const [apiOrders, setApiOrders] = useState([]);
+  const [apiOrdersPagination, setApiOrdersPagination] = useState({
+    current_page: 1,
+    per_page: 10,
+    total_orders: 0,
+    total_pages: 1,
+  });
+  const [isOrdersLoading, setIsOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -55,7 +84,7 @@ useEffect(() => {
     const savedWishlist = localStorage.getItem("hunter_wishlist");
     const savedOrders = localStorage.getItem("hunter_orders");
     const savedUser = localStorage.getItem("hunter_user");
-    const savedToken = localStorage.getItem("hunter_token");
+    const savedToken = getSecureToken();
 
     if (savedCart) {
       setCart(JSON.parse(savedCart));
@@ -72,34 +101,64 @@ useEffect(() => {
     // -----------------------------
     // RESTORE AUTHENTICATION
     // -----------------------------
-    // -----------------------------
-// RESTORE AUTHENTICATION
-// -----------------------------
-const validToken =
-  typeof savedToken === "string" &&
-  savedToken.trim() !== "" &&
-  savedToken !== "undefined" &&
-  savedToken !== "null";
+    const validToken =
+      typeof savedToken === "string" &&
+      savedToken.trim() !== "" &&
+      savedToken !== "undefined" &&
+      savedToken !== "null";
 
-if (savedUser && validToken) {
-  const parsedUser = JSON.parse(savedUser);
+    if (validToken) {
+      let parsedUser = null;
+      try {
+        if (savedUser) parsedUser = JSON.parse(savedUser);
+      } catch (e) {}
 
-  if (parsedUser) {
-    setUser({
-      ...parsedUser,
-      isLoggedIn: true,
-      token: savedToken,
-    });
-  }
-} else {
-  setUser({
-    name: "",
-    email: "",
-    isLoggedIn: false,
-    token: "",
-    customer: null,
-  });
-}
+      const jwtData = decodeJwtPayload(savedToken);
+      const jwtEmail = jwtData?.email || jwtData?.customer?.email || "";
+      const jwtName = jwtData?.name || jwtData?.first_name || (jwtEmail ? jwtEmail.split("@")[0] : "");
+
+      const mUserName = typeof window !== "undefined" ? localStorage.getItem("m_user_name") : "";
+      const mUserEmail = typeof window !== "undefined" ? localStorage.getItem("m_user_email") : "";
+
+      const resolvedEmail =
+        parsedUser?.email ||
+        parsedUser?.customer?.email ||
+        jwtEmail ||
+        mUserEmail ||
+        "";
+
+      const resolvedName =
+        parsedUser?.name ||
+        (parsedUser?.customer?.first_name
+          ? `${parsedUser.customer.first_name} ${parsedUser.customer.last_name || ""}`.trim()
+          : "") ||
+        jwtName ||
+        mUserName ||
+        "Customer";
+
+      setUser({
+        ...(parsedUser || {}),
+        name: resolvedName,
+        email: resolvedEmail,
+        isLoggedIn: true,
+        token: savedToken,
+      });
+
+      // Load live API orders for active token session
+      fetchOrderList({ page: 1, limit: 20 }).then((res) => {
+        if (res?.status === 1 && res?.data?.orders) {
+          setApiOrders(res.data.orders);
+        }
+      });
+    } else {
+      setUser({
+        name: "",
+        email: "",
+        isLoggedIn: false,
+        token: "",
+        customer: null,
+      });
+    }
   } catch (error) {
     console.error("Failed to load shop state from localStorage:", error);
 
@@ -145,11 +204,12 @@ if (savedUser && validToken) {
     }
   }, [orders, isLoaded]);
 
-  // Sync user to localStorage
+  // Sync user to localStorage (without token property)
   useEffect(() => {
     if (!isLoaded) return;
     try {
-      localStorage.setItem("hunter_user", JSON.stringify(user));
+      const { token: _, ...safeUser } = user || {};
+      localStorage.setItem("hunter_user", JSON.stringify(safeUser));
     } catch (error) {
       console.error("Failed to save user to localStorage:", error);
     }
@@ -169,18 +229,21 @@ if (savedUser && validToken) {
       customer: userData?.customer || null,
     };
 
+    // Strip raw token from saved JSON profile object before writing to localStorage
+    const { token: _, ...safeUserSavedState } = newUserState;
+
     setUser(newUserState);
     try {
-      localStorage.setItem("hunter_user", JSON.stringify(newUserState));
+      localStorage.setItem("hunter_user", JSON.stringify(safeUserSavedState));
       if (userData?.token) {
-        localStorage.setItem("hunter_token", userData.token);
+        setSecureToken(userData.token);
       }
     } catch (e) {
       console.error("Storage error:", e);
     }
   };
 
-  // Logout action
+  // Logout action - Completely clear all user session data & local storage
   const logout = () => {
     setUser({
       name: "",
@@ -189,11 +252,24 @@ if (savedUser && validToken) {
       token: "",
       customer: null,
     });
+    setCart([]);
+    setWishlist([]);
+    setOrders([]);
+    setApiOrders([]);
+
     try {
-      localStorage.removeItem("hunter_token");
+      removeSecureToken();
       localStorage.removeItem("hunter_user");
+      localStorage.removeItem("hunter_cart");
+      localStorage.removeItem("hunter_wishlist");
+      localStorage.removeItem("hunter_orders");
+      localStorage.removeItem("m_user_name");
+      localStorage.removeItem("m_user_email");
+      localStorage.removeItem("m_token");
+      localStorage.removeItem("token");
+      localStorage.clear(); // Complete clear of browser local storage for this domain
     } catch (e) {
-      console.error("Token clear error:", e);
+      console.error("Logout storage clear error:", e);
     }
   };
 
@@ -308,12 +384,43 @@ if (savedUser && validToken) {
     return wishlist.length;
   };
 
+  // Load API Orders from backend
+  const loadApiOrders = async ({ page = 1, limit = 10 } = {}) => {
+    setIsOrdersLoading(true);
+    setOrdersError("");
+    try {
+      const res = await fetchOrderList({ page, limit });
+      if (res?.status === 1 && res?.data) {
+        setApiOrders(res.data.orders || []);
+        if (res.data.pagination) {
+          setApiOrdersPagination(res.data.pagination);
+        }
+        return res.data;
+      } else {
+        setOrdersError(res?.message || "Failed to fetch orders.");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error loading API orders:", err);
+      setOrdersError(err.message || "An error occurred while loading orders.");
+      return null;
+    } finally {
+      setIsOrdersLoading(false);
+    }
+  };
+
   return (
     <ShopContext.Provider
       value={{
         cart,
         wishlist,
         orders,
+        apiOrders,
+        apiOrdersPagination,
+        isOrdersLoading,
+        ordersError,
+        loadApiOrders,
+        fetchOrderDetails,
         user,
         isLoaded,
         categories,

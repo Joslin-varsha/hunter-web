@@ -9,6 +9,7 @@ import {
   FiArrowRight,
   FiShield,
   FiArrowLeft,
+  FiAlertCircle,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
@@ -116,10 +117,23 @@ function CheckoutPageContent() {
 
       // 3. Fetch Payment Methods
       const pmRes = await fetchPaymentMethods();
+      let pms = [];
       if (pmRes?.status === "success" && Array.isArray(pmRes.payment_methods) && pmRes.payment_methods.length > 0) {
-        setPaymentMethodsList(pmRes.payment_methods);
-        setPaymentMethod(pmRes.payment_methods[0].name);
+        pms = [...pmRes.payment_methods];
+      } else {
+        pms = [
+          { name: "Razorpay", label: "Prepaid (Razorpay)", advance_amount: 0 },
+          { name: "Advance_Pay", label: "Advance Pay", advance_amount: 150 },
+        ];
       }
+
+      // Always include Cash on Delivery / Test Order option for testing
+      if (!pms.some((p) => p.name === "COD" || p.name === "Cash on Delivery")) {
+        pms.push({ name: "COD", label: "Cash on Delivery / Test Order (No Payment Required)", advance_amount: 0 });
+      }
+
+      setPaymentMethodsList(pms);
+      setPaymentMethod(pms[0].name);
     }
     initCheckoutData();
   }, []);
@@ -361,9 +375,10 @@ function CheckoutPageContent() {
           } catch (e) {}
         }
 
-        // Open Razorpay JS popup modal directly on current page
+        // Open Razorpay JS popup modal directly on current page (unless COD / Test Order is selected)
+        const isCodSelected = paymentMethod === "COD" || paymentMethod === "Cash on Delivery";
         const scriptLoaded = await loadRazorpayScript();
-        if (scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
+        if (!isCodSelected && scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
           const amountInPaise = Math.round((Number(responseData.final_price) || grandTotal) * 100);
 
           const options = {
@@ -564,6 +579,24 @@ function CheckoutPageContent() {
             {/* Left Column: 4 Clean Checkout Sections */}
             <div className="lg:col-span-7 space-y-6">
               
+              {/* API Order Error Alert Banner */}
+              {orderApiError && (
+                <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-200 text-red-800 text-xs sm:text-sm font-bold flex items-start gap-3 shadow-md">
+                  <FiAlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-black uppercase tracking-wider text-red-900 mb-0.5">Order Error</p>
+                    <p className="font-medium text-red-700 leading-relaxed">{orderApiError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOrderApiError("")}
+                    className="text-red-400 hover:text-red-800 text-xs font-black uppercase tracking-wider p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
               {/* SECTION 1: CUSTOMER INFORMATION */}
               <div className="space-y-3.5">
                 <h2 className="text-base sm:text-lg font-extrabold text-black">
@@ -1015,6 +1048,14 @@ function CheckoutPageContent() {
                     </div>
                   )}
                 </div>
+
+                {/* Order Error Notification Box */}
+                {orderApiError && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-start gap-2.5">
+                    <FiAlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">{orderApiError}</span>
+                  </div>
+                )}
 
                 {/* Complete Order Button */}
                 <button

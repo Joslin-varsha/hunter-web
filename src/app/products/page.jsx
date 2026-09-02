@@ -87,7 +87,7 @@ function ProductsContent() {
   const searchParams = useSearchParams();
   const initialCategoryParam = searchParams.get("category") || searchParams.get("product_tag") || "";
 
-  const { categories, allApiProducts } = useShop();
+  const { categories, allApiProducts, bestsellerProducts } = useShop();
 
   const [apiProducts, setApiProducts] = useState([]);
   const [apiCategories, setApiCategories] = useState([]);
@@ -108,31 +108,22 @@ function ProductsContent() {
     }
   }, [initialCategoryParam]);
 
+  // Reset page to 1 whenever search query or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
   // Load products & full categories list dynamically from GET /hunter-mens-wear/product-list
   useEffect(() => {
     async function loadProducts() {
       setIsLoading(true);
-      const term = searchQuery.trim().toLowerCase();
-      const catList = apiCategories.length > 0 ? apiCategories : categories;
-
-      // Smart category mapping: if user types a category name in search box (e.g. "jean", "t-shirt", "cap"), lookup matching category tag!
-      let effectiveCategory = selectedCategory;
-      if (term && !selectedCategory && Array.isArray(catList) && catList.length > 0) {
-        const matchedCat = catList.find(
-          (c) => c.name && (c.name.toLowerCase() === term || c.name.toLowerCase().includes(term) || term.includes(c.name.toLowerCase()))
-        );
-        if (matchedCat) {
-          effectiveCategory = matchedCat.id;
-        }
-      }
-
       const res = await fetchProductList({
         page: currentPage,
-        product_tag: effectiveCategory,
+        product_tag: selectedCategory,
         min_price: 0,
         max_price: maxPriceRange === 3000 ? 0 : maxPriceRange,
         filter_product: "all",
-        search: term,
+        search: searchQuery.trim(),
       });
 
       if (res?.status === 1 && res?.data) {
@@ -189,7 +180,7 @@ function ProductsContent() {
     }
 
     // When searching, pool all catalog products so search spans the entire store across all pages
-    const combined = [...apiProducts, ...(allApiProducts || [])];
+    const combined = [...apiProducts, ...(allApiProducts || []), ...(bestsellerProducts || [])];
     const seen = new Set();
     const pool = combined.filter((p) => {
       const key = p.id || p.slug;

@@ -26,7 +26,7 @@ import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import MobileBottomNav from "../../../components/MobileBottomNav";
 import { useShop } from "../../context/ShopContext";
-import { registerCustomer, loginCustomer, verifyOTP, forgotPassword, resetPassword } from "../../utils/api";
+import { registerCustomer, loginCustomer, verifyOTP, forgotPassword, resetPassword, setSecureToken } from "../../utils/api";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -113,7 +113,7 @@ function LoginPageContent() {
 
     if (isSuccess) {
       if (res.token) {
-        localStorage.setItem("hunter_token", res.token);
+        setSecureToken(res.token);
       }
       const custName = res.customer
         ? `${res.customer.first_name || ""} ${res.customer.last_name || ""}`.trim()
@@ -195,7 +195,7 @@ function LoginPageContent() {
 
     if (res.status === "success" || res.status === 1 || res.status === "1" || res.success === true) {
       if (res.token) {
-        localStorage.setItem("hunter_token", res.token);
+        setSecureToken(res.token);
       }
       const custName = res.customer
         ? `${res.customer.first_name || ""} ${res.customer.last_name || ""}`.trim()

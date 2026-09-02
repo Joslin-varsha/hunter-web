@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,14 +29,45 @@ export default function AccountPage() {
     user,
     logout,
     orders,
+    apiOrders,
+    apiOrdersPagination,
     getWishlistCount,
     getCartCount,
   } = useShop();
 
+  const [mounted, setMounted] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const wishlistCount = getWishlistCount();
   const cartCount = getCartCount();
+  const totalOrdersCount = apiOrdersPagination?.total_orders || (apiOrders?.length > 0 ? apiOrders.length : orders.length);
+
+  // Read localStorage fallbacks safely only after client mount to prevent SSR hydration mismatch
+  const mUserName = mounted && typeof window !== "undefined" ? localStorage.getItem("m_user_name") || "" : "";
+  const mUserEmail = mounted && typeof window !== "undefined" ? localStorage.getItem("m_user_email") || "" : "";
+
+  const displayName =
+    user?.name ||
+    (user?.customer?.first_name
+      ? `${user.customer.first_name} ${user.customer.last_name || ""}`.trim()
+      : "") ||
+    mUserName ||
+    (user?.email || mUserEmail ? (user?.email || mUserEmail).split("@")[0] : "") ||
+    "Customer";
+
+  const displayEmail = user?.email || mUserEmail || "";
+
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "HU";
 
   return (
     <main className="min-h-screen bg-white pb-24 lg:pb-0">
@@ -84,26 +115,20 @@ export default function AccountPage() {
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center gap-3.5">
                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white text-black font-black text-lg sm:text-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                      {user.name
-                        ? user.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
-                        : "AM"}
+                      {userInitials}
                     </div>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h2 className="text-base sm:text-xl font-black uppercase tracking-tight truncate">
-                          {user.name}
+                          {displayName}
                         </h2>
                         <span className="inline-flex items-center gap-1 bg-white/10 text-white text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/20 flex-shrink-0">
                           <FiAward className="w-2.5 h-2.5 text-amber-400" />
                           VIP
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-gray-400 font-medium truncate">{displayEmail}</p>
                     </div>
                   </div>
 
@@ -161,7 +186,7 @@ export default function AccountPage() {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-black text-white flex items-center justify-center mx-auto mb-1.5 shadow group-hover:scale-105 transition-transform">
                   <FiPackage className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <p className="text-sm sm:text-xl font-black text-black">{orders.length}</p>
+                <p className="text-sm sm:text-xl font-black text-black">{totalOrdersCount}</p>
                 <p className="text-[9px] sm:text-xs uppercase font-bold text-gray-500 tracking-wider">
                   My Orders
                 </p>
@@ -219,7 +244,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-400">({orders.length})</span>
+                    <span className="text-xs font-bold text-gray-400">({totalOrdersCount})</span>
                     <FiChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition" />
                   </div>
                 </Link>
