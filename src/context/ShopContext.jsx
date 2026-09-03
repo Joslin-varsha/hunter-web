@@ -141,13 +141,6 @@ export function ShopProvider({ children }) {
         isLoggedIn: true,
         token: savedToken,
       });
-
-      // Load live API orders for active token session
-      fetchOrderList({ page: 1, limit: 20 }).then((res) => {
-        if (res?.status === 1 && res?.data?.orders) {
-          setApiOrders(res.data.orders);
-        }
-      });
     } else {
       setUser({
         name: "",

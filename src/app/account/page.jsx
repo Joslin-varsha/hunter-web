@@ -33,6 +33,7 @@ export default function AccountPage() {
     apiOrdersPagination,
     getWishlistCount,
     getCartCount,
+    loadApiOrders,
   } = useShop();
 
   const [mounted, setMounted] = useState(false);
@@ -40,6 +41,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     setMounted(true);
+    loadApiOrders({ page: 1, limit: 20 });
   }, []);
 
   const wishlistCount = getWishlistCount();
