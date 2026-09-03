@@ -340,7 +340,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                   </span>
                 )}
                 <span className="text-xs text-gray-400 font-medium">
-                  Tax included. Free shipping across India.
+                  Tax included. Shipping calculated at payment.
                 </span>
               </div>
 

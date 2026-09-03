@@ -7,7 +7,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   FiCheck,
   FiArrowRight,
-  FiShield,
   FiArrowLeft,
   FiAlertCircle,
 } from "react-icons/fi";
@@ -115,25 +114,24 @@ function CheckoutPageContent() {
         }
       }
 
-      // 3. Fetch Payment Methods
+      // 3. Fetch Payment Methods (Excluding Cash on Delivery)
       const pmRes = await fetchPaymentMethods();
       let pms = [];
       if (pmRes?.status === "success" && Array.isArray(pmRes.payment_methods) && pmRes.payment_methods.length > 0) {
-        pms = [...pmRes.payment_methods];
-      } else {
+        pms = pmRes.payment_methods.filter(
+          (p) => p.name !== "COD" && p.name !== "Cash on Delivery" && !p.name?.toLowerCase().includes("cash on delivery")
+        );
+      }
+      
+      if (pms.length === 0) {
         pms = [
-          { name: "Razorpay", label: "Prepaid (Razorpay)", advance_amount: 0 },
+          { name: "Razorpay", label: "Prepaid (Razorpay / UPI / Cards / NetBanking)", advance_amount: 0 },
           { name: "Advance_Pay", label: "Advance Pay", advance_amount: 150 },
         ];
       }
 
-      // Always include Cash on Delivery / Test Order option for testing
-      if (!pms.some((p) => p.name === "COD" || p.name === "Cash on Delivery")) {
-        pms.push({ name: "COD", label: "Cash on Delivery / Test Order (No Payment Required)", advance_amount: 0 });
-      }
-
       setPaymentMethodsList(pms);
-      setPaymentMethod(pms[0].name);
+      setPaymentMethod(pms[0]?.name || "Razorpay");
     }
     initCheckoutData();
   }, []);
@@ -375,10 +373,9 @@ function CheckoutPageContent() {
           } catch (e) {}
         }
 
-        // Open Razorpay JS popup modal directly on current page (unless COD / Test Order is selected)
-        const isCodSelected = paymentMethod === "COD" || paymentMethod === "Cash on Delivery";
+        // Open Razorpay JS popup modal directly on current page
         const scriptLoaded = await loadRazorpayScript();
-        if (!isCodSelected && scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
+        if (scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
           const amountInPaise = Math.round((Number(responseData.final_price) || grandTotal) * 100);
 
           const options = {
@@ -426,9 +423,13 @@ function CheckoutPageContent() {
           const rzp = new window.Razorpay(options);
           rzp.open();
           return;
+        } else if (responseData.payment_link) {
+          // If payment link returned from server, redirect to hosted payment page
+          window.location.href = responseData.payment_link;
+          return;
         }
 
-        // Fallback for COD or if Razorpay script is unavailable
+        // Fallback order placement
         setOrderId(finalOrderId);
         setOrderData(responseData);
         addOrder({
@@ -485,11 +486,6 @@ function CheckoutPageContent() {
           <h1 className="text-lg sm:text-3xl font-black text-black tracking-tight uppercase">
             Secure Checkout
           </h1>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-3.5 py-2 rounded-full border border-green-200">
-          <FiShield className="w-4 h-4" />
-          <span>256-Bit SSL Encrypted</span>
         </div>
       </div>
 
@@ -1057,11 +1053,18 @@ function CheckoutPageContent() {
                   </div>
                 )}
 
+                {/* Shipping Charges Notice Note Box */}
+                <div className="bg-red-50 border border-red-200/90 rounded-xl px-3 py-2 text-center">
+                  <p className="text-[10px] sm:text-[11px] text-red-600 font-bold leading-tight">
+                    <span className="font-black uppercase">Note:</span> Shipping charges will be applied at the time of payment.
+                  </p>
+                </div>
+
                 {/* Complete Order Button */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-black text-white py-4 rounded-full text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-black text-white py-4 rounded-full text-xs font-black uppercase tracking-widest hover:bg-gray-800 transition shadow-xl active:scale-[0.98] flex items-center justify-center gap-2 mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <span>Processing Order...</span>

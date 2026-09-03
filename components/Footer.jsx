@@ -5,7 +5,7 @@ import { FaWhatsapp } from "react-icons/fa";
 
 export default function Footer() {
   return (
-    <footer id="contact" className="bg-[#111111] text-white mt-8 sm:mt-12 hidden lg:block">
+    <footer id="contact" className="bg-[#111111] text-white mt-8 sm:mt-12 block pb-24 lg:pb-0">
       <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 sm:py-12 lg:py-16">
         {/* Top */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 sm:gap-12">
@@ -50,7 +50,41 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Account */}
+          {/* Information */}
+          <div>
+            <h3 className="uppercase tracking-[3px] text-xs sm:text-sm font-bold mb-4 sm:mb-6 text-gray-200">
+              Information
+            </h3>
+            <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-gray-400">
+              <li>
+                <a
+                  href="https://api.whatsapp.com/send/?phone=917339572103&text=I+want+to+track+my+order&type=phone_number&app_absent=0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition"
+                >
+                  Tracking
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://api.whatsapp.com/send/?phone=917339572103&text=Hello+Support&type=phone_number&app_absent=0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition"
+                >
+                  Support
+                </a>
+              </li>
+              <li>
+                <Link href="/support" className="hover:text-white transition">
+                  Contact Us
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Account & Policies */}
           <div>
             <h3 className="uppercase tracking-[3px] text-xs sm:text-sm font-bold mb-4 sm:mb-6 text-gray-200">
               My Account
@@ -58,19 +92,6 @@ export default function Footer() {
             <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-gray-400">
               <li><Link href="/account" className="hover:text-white transition">My Profile</Link></li>
               <li><Link href="/orders" className="hover:text-white transition">Order History</Link></li>
-              <li><Link href="/cart" className="hover:text-white transition">Shopping Cart</Link></li>
-              <li><Link href="/wishlist" className="hover:text-white transition">Wishlist</Link></li>
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h3 className="uppercase tracking-[3px] text-xs sm:text-sm font-bold mb-4 sm:mb-6 text-gray-200">
-              Customer Support
-            </h3>
-            <ul className="space-y-2.5 sm:space-y-3.5 text-xs sm:text-sm text-gray-400">
-              <li><Link href="/support" className="hover:text-white transition">Help & FAQs</Link></li>
-              <li><Link href="/support" className="hover:text-white transition">Contact Us</Link></li>
               <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
               <li><Link href="/terms" className="hover:text-white transition">Terms & Conditions</Link></li>
             </ul>

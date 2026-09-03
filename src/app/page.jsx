@@ -6,6 +6,7 @@ import BestSelling from "../../components/BestSelling";
 import Categories from "../../components/Categories";
 import NewArrivals from "../../components/NewArrivals";
 import BrandStory from "../../components/BrandStory";
+import Testimonials from "../../components/Testimonials";
 import Footer from "../../components/Footer";
 import MobileBottomNav from "../../components/MobileBottomNav";
 
@@ -20,6 +21,7 @@ export default function Home() {
       <Categories />
       <NewArrivals />
       <BrandStory />
+      <Testimonials />
       <Footer />
       <MobileBottomNav />
     </main>

@@ -59,7 +59,7 @@ export default function TermsPage() {
             <span>2. Orders & Shipping</span>
           </div>
           <p>
-            Orders are processed within 24-48 business hours. Free shipping applies to orders over $60. Expected delivery timelines are estimated based on courier dispatch.
+            Orders are processed within 24-48 business hours. Shipping charges are calculated and applied at the time of payment. Expected delivery timelines are estimated based on courier dispatch.
           </p>
         </section>
 

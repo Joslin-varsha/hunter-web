@@ -296,30 +296,21 @@ function CartPageContent() {
                 <div className="space-y-3 text-xs sm:text-sm">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
-                    <span className="font-bold text-black">${subtotal.toFixed(2)}</span>
+                    <span className="font-bold text-black">₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
 
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600 font-bold">
                       <span>Promo Discount ({discount}%)</span>
-                      <span>-${finalDiscountAmount.toFixed(2)}</span>
+                      <span>-₹{finalDiscountAmount.toLocaleString("en-IN")}</span>
                     </div>
                   )}
-
-                  <div className="flex justify-between text-gray-600">
-                    <span>Estimated Shipping</span>
-                    {shipping === 0 ? (
-                      <span className="font-bold text-green-600 uppercase">FREE</span>
-                    ) : (
-                      <span className="font-bold text-black">${shipping.toFixed(2)}</span>
-                    )}
-                  </div>
 
                   <hr className="border-gray-200 my-4" />
 
                   <div className="flex justify-between text-base sm:text-lg font-black text-black">
                     <span>Total</span>
-                    <span>${grandTotal.toFixed(2)}</span>
+                    <span>₹{grandTotal.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 

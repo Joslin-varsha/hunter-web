@@ -26,8 +26,7 @@ const slides = [
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  const marqueeItems = Array(12).fill("FREE SHIPPING ON ORDERS ABOVE $60");
+  const marqueeItems = Array(12).fill("HUNTER STREETWEAR • PREMIUM URBAN ESSENTIALS • EXCLUSIVE DROPS • 100% QUALITY GUARANTEED");
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);

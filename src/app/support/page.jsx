@@ -31,7 +31,7 @@ export default function SupportPage() {
   const faqs = [
     {
       q: "How long does shipping take?",
-      a: "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days. Free shipping applies to orders above $60.",
+      a: "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days. Shipping charges are applied at the time of payment.",
     },
     {
       q: "How can I track my order?",
@@ -43,7 +43,7 @@ export default function SupportPage() {
     },
     {
       q: "Which payment methods are accepted?",
-      a: "We accept Visa, Mastercard, American Express, Apple Pay, and Cash on Delivery (COD).",
+      a: "We accept UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards, NetBanking, and online wallets via Razorpay secure checkout.",
     },
   ];
 
