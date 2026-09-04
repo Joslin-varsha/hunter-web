@@ -13,6 +13,7 @@ import {
   FiTruck,
   FiX,
   FiArrowLeft,
+  FiAlertCircle,
 } from "react-icons/fi";
 import TopBar from "../../../components/TopBar";
 import Navbar from "../../../components/Navbar";
@@ -38,6 +39,7 @@ function CartPageContent() {
     getCartCount,
   } = useShop();
 
+  const [cartErrors, setCartErrors] = useState({});
   const [buyNowQuantity, setBuyNowQuantity] = useState(buyNowQty);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -233,35 +235,71 @@ function CartPageContent() {
                       </p>
 
                       {/* Quantity Controls */}
-                      <div className="mt-3 inline-flex items-center border border-gray-200 rounded-full bg-gray-50 p-0.5">
-                        <button
-                          onClick={() => {
-                            if (item.isBuyNowItem) {
-                              setBuyNowQuantity((q) => Math.max(1, q - 1));
-                            } else {
-                              updateQuantity(item.cartItemId, item.quantity - 1);
-                            }
-                          }}
-                          className="w-6 h-6 rounded-full bg-white text-black font-bold text-xs flex items-center justify-center hover:bg-gray-200 transition"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center text-xs font-black text-black">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => {
-                            if (item.isBuyNowItem) {
-                              setBuyNowQuantity((q) => q + 1);
-                            } else {
-                              updateQuantity(item.cartItemId, item.quantity + 1);
-                            }
-                          }}
-                          className="w-6 h-6 rounded-full bg-white text-black font-bold text-xs flex items-center justify-center hover:bg-gray-200 transition"
-                        >
-                          +
-                        </button>
-                      </div>
+                      {(() => {
+                        let itemStock = item.stock !== undefined ? Number(item.stock) : 99;
+                        if (Array.isArray(item.product?.variants)) {
+                          const v = item.product.variants.find(
+                            (vr) => vr.variant === item.selectedSize || vr.variant === item.selectedSize
+                          );
+                          if (v && v.stock !== undefined) itemStock = Number(v.stock);
+                        }
+
+                        return (
+                          <div className="mt-3">
+                            <div className="inline-flex items-center border border-gray-200 rounded-full bg-gray-50 p-0.5">
+                              <button
+                                onClick={() => {
+                                  if (item.isBuyNowItem) {
+                                    setBuyNowQuantity((q) => Math.max(1, q - 1));
+                                  } else {
+                                    updateQuantity(item.cartItemId, item.quantity - 1);
+                                  }
+                                  setCartErrors((prev) => ({ ...prev, [item.cartItemId]: "" }));
+                                }}
+                                className="w-6 h-6 rounded-full bg-white text-black font-bold text-xs flex items-center justify-center hover:bg-gray-200 transition active:scale-95"
+                              >
+                                -
+                              </button>
+                              <span className="w-8 text-center text-xs font-black text-black">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  if (itemStock > 0 && item.quantity >= itemStock) {
+                                    setCartErrors((prev) => ({
+                                      ...prev,
+                                      [item.cartItemId]: `Only ${itemStock} items available in stock`,
+                                    }));
+                                  } else if (itemStock <= 0) {
+                                    setCartErrors((prev) => ({
+                                      ...prev,
+                                      [item.cartItemId]: "Out of stock",
+                                    }));
+                                  } else {
+                                    if (item.isBuyNowItem) {
+                                      setBuyNowQuantity((q) => q + 1);
+                                    } else {
+                                      updateQuantity(item.cartItemId, item.quantity + 1);
+                                    }
+                                    setCartErrors((prev) => ({ ...prev, [item.cartItemId]: "" }));
+                                  }
+                                }}
+                                className="w-6 h-6 rounded-full bg-white text-black font-bold text-xs flex items-center justify-center hover:bg-gray-200 transition active:scale-95"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            {/* Red error message under quantity */}
+                            {cartErrors[item.cartItemId] && (
+                              <p className="mt-1.5 text-[11px] font-bold text-red-600 flex items-center gap-1 animate-pulse">
+                                <FiAlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>{cartErrors[item.cartItemId]}</span>
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Price & Remove */}

@@ -13,6 +13,7 @@ import {
   FiShield,
   FiChevronLeft,
   FiChevronRight,
+  FiAlertCircle,
 } from "react-icons/fi";
 import TopBar from "../../../../components/TopBar";
 import Navbar from "../../../../components/Navbar";
@@ -43,6 +44,7 @@ export default function ProductDetailPage({ params: paramsPromise }) {
 
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [stockError, setStockError] = useState("");
   const [showAddedToast, setShowAddedToast] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [showStickyBottomBar, setShowStickyBottomBar] = useState(true);
@@ -105,7 +107,11 @@ export default function ProductDetailPage({ params: paramsPromise }) {
       }
 
       if (res?.status === 1 && res?.data?.product) {
-        const prodData = res.data.product;
+        const prodData = {
+          ...res.data.product,
+          original_mrp: res.data.price !== undefined && res.data.price !== null ? Number(res.data.price) : res.data.product.price,
+          data_price: res.data.price,
+        };
         setLiveProduct(prodData);
 
         // Populate size variants & auto-select first in-stock variant
@@ -145,6 +151,23 @@ export default function ProductDetailPage({ params: paramsPromise }) {
       loadDetails();
     }
   }, [productIdOrSlug]);
+
+  const matchedVariant = Array.isArray(variants) && variants.length > 0
+    ? variants.find((v) => formatShortSize(v.variant) === selectedSize || v.variant === selectedSize) || variants[0]
+    : null;
+  const activeVariantId = matchedVariant?.id || liveProduct?.variant_id || liveProduct?.id;
+  const availableStock = matchedVariant && matchedVariant.stock !== undefined
+    ? Number(matchedVariant.stock)
+    : (liveProduct?.product_stock !== undefined ? Number(liveProduct.product_stock) : 99);
+
+  // Automatically clamp quantity if selected variant has less stock (Unconditional Hook)
+  useEffect(() => {
+    if (availableStock > 0 && quantity > availableStock) {
+      setQuantity(availableStock);
+    } else if (availableStock <= 0) {
+      setQuantity(1);
+    }
+  }, [selectedSize, availableStock]);
 
   if (isLoading) {
     return (
@@ -186,15 +209,21 @@ export default function ProductDetailPage({ params: paramsPromise }) {
   const imgUrl =
     (liveProduct.cover_image_url && liveProduct.cover_image_url.trim() !== "" ? liveProduct.cover_image_url : null) ||
     (liveProduct.cover_image_path && liveProduct.cover_image_path.trim() !== "" ? `https://meetay.com/${liveProduct.cover_image_path}` : null);
-  const formattedPrice = `₹${(liveProduct.sale_price || liveProduct.price || 0).toLocaleString("en-IN")}`;
-  const formattedOriginalPrice = liveProduct.price > (liveProduct.sale_price || 0) ? `₹${liveProduct.price.toLocaleString("en-IN")}` : null;
+  const currentSalePrice = liveProduct.sale_price || liveProduct.price || 0;
+  const mrpPrice = liveProduct.original_mrp !== undefined && liveProduct.original_mrp !== null ? liveProduct.original_mrp : (liveProduct.price || 0);
 
-  const matchedVariant = Array.isArray(variants) && variants.length > 0
-    ? variants.find((v) => formatShortSize(v.variant) === selectedSize || v.variant === selectedSize) || variants[0]
-    : null;
-  const activeVariantId = matchedVariant?.id || liveProduct.variant_id || liveProduct.id;
+  const formattedPrice = `₹${Math.round(Number(currentSalePrice)).toLocaleString("en-IN")}`;
+  const formattedOriginalPrice =
+    Number(mrpPrice) > Number(currentSalePrice)
+      ? `₹${Math.round(Number(mrpPrice)).toLocaleString("en-IN")}`
+      : null;
+  const discountPercentage =
+    Number(mrpPrice) > Number(currentSalePrice)
+      ? Math.round(((Number(mrpPrice) - Number(currentSalePrice)) / Number(mrpPrice)) * 100)
+      : 0;
 
   const handleAddToCart = () => {
+    const safeQty = availableStock > 0 ? Math.min(quantity, availableStock) : quantity;
     const itemToAdd = {
       id: liveProduct.id,
       name: liveProduct.name,
@@ -202,15 +231,17 @@ export default function ProductDetailPage({ params: paramsPromise }) {
       image: imgUrl,
       variant_id: activeVariantId,
       variants: variants,
+      stock: availableStock,
     };
-    addToCart(itemToAdd, selectedSize, quantity);
+    addToCart(itemToAdd, selectedSize, safeQty);
     setShowAddedToast(true);
     setTimeout(() => setShowAddedToast(false), 3000);
   };
 
   const handleBuyNow = () => {
+    const safeQty = availableStock > 0 ? Math.min(quantity, availableStock) : quantity;
     const targetPrice = liveProduct.sale_price || liveProduct.price || 0;
-    const url = `/checkout?buyNow=true&id=${liveProduct.id}&slug=${encodeURIComponent(liveProduct.slug || liveProduct.id)}&size=${encodeURIComponent(selectedSize)}&qty=${quantity}&name=${encodeURIComponent(liveProduct.name)}&price=${targetPrice}&img=${encodeURIComponent(imgUrl)}&variant_id=${activeVariantId}`;
+    const url = `/checkout?buyNow=true&id=${liveProduct.id}&slug=${encodeURIComponent(liveProduct.slug || liveProduct.id)}&size=${encodeURIComponent(selectedSize)}&qty=${safeQty}&name=${encodeURIComponent(liveProduct.name)}&price=${targetPrice}&img=${encodeURIComponent(imgUrl)}&variant_id=${activeVariantId}&stock=${availableStock}`;
     router.push(url);
   };
 
@@ -332,11 +363,16 @@ export default function ProductDetailPage({ params: paramsPromise }) {
               </h1>
 
               {/* Price */}
-              <div className="mt-3 sm:mt-4 flex items-baseline gap-3">
+              <div className="mt-3 sm:mt-4 flex items-baseline gap-3 flex-wrap">
                 <span className="text-2xl sm:text-3xl font-black text-black">{formattedPrice}</span>
                 {formattedOriginalPrice && (
-                  <span className="text-base text-gray-400 line-through font-semibold">
+                  <span className="text-base sm:text-lg text-gray-400 line-through font-semibold">
                     {formattedOriginalPrice}
+                  </span>
+                )}
+                {discountPercentage > 0 && (
+                  <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    {discountPercentage}% OFF
                   </span>
                 )}
                 <span className="text-xs text-gray-400 font-medium">
@@ -364,7 +400,10 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                         <button
                           key={v.id || v.variant}
                           disabled={isOutOfStock}
-                          onClick={() => setSelectedSize(v.variant)}
+                          onClick={() => {
+                            setSelectedSize(v.variant);
+                            setStockError("");
+                          }}
                           className={`px-4 py-2.5 h-11 min-w-[48px] rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center border ${
                             isOutOfStock
                               ? "bg-gray-100 text-gray-400 border-gray-100 line-through opacity-50 cursor-not-allowed"
@@ -388,8 +427,16 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                 </label>
                 <div className="flex items-center w-36 border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
                   <button
-                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    className="w-12 h-10 flex items-center justify-center text-lg font-bold text-gray-600 hover:bg-gray-200 transition"
+                    disabled={quantity <= 1 || availableStock <= 0}
+                    onClick={() => {
+                      setQuantity((prev) => Math.max(1, prev - 1));
+                      setStockError("");
+                    }}
+                    className={`w-12 h-10 flex items-center justify-center text-lg font-bold transition ${
+                      quantity <= 1 || availableStock <= 0
+                        ? "text-gray-300 bg-gray-100 cursor-not-allowed"
+                        : "text-gray-600 hover:bg-gray-200 active:scale-95"
+                    }`}
                   >
                     -
                   </button>
@@ -397,12 +444,29 @@ export default function ProductDetailPage({ params: paramsPromise }) {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity((prev) => prev + 1)}
-                    className="w-12 h-10 flex items-center justify-center text-lg font-bold text-gray-600 hover:bg-gray-200 transition"
+                    onClick={() => {
+                      if (availableStock > 0 && quantity >= availableStock) {
+                        setStockError(`Only ${availableStock} items available in stock`);
+                      } else if (availableStock <= 0) {
+                        setStockError("This item is currently out of stock");
+                      } else {
+                        setQuantity((prev) => prev + 1);
+                        setStockError("");
+                      }
+                    }}
+                    className="w-12 h-10 flex items-center justify-center text-lg font-bold transition text-gray-600 hover:bg-gray-200 active:scale-95"
                   >
                     +
                   </button>
                 </div>
+
+                {/* Red color stock error message under quantity */}
+                {stockError && (
+                  <p className="mt-2 text-xs font-bold text-red-600 flex items-center gap-1.5 animate-pulse">
+                    <FiAlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{stockError}</span>
+                  </p>
+                )}
               </div>
 
               {/* Desktop Actions (Add to Bag & Buy Now) */}

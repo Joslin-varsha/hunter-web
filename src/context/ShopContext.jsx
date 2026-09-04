@@ -254,25 +254,46 @@ export function ShopProvider({ children }) {
     }
   };
 
-  // Cart operations
+  // Helper to extract short size format for variant matching
+  const matchVariantStock = (variants, selectedSize, defaultStock = 99) => {
+    if (!Array.isArray(variants) || variants.length === 0) return defaultStock;
+    const v = variants.find((item) => {
+      const varName = String(item.variant || "").trim();
+      const short = varName.match(/^([A-Za-z0-9]+)\(/)?.[1] || varName;
+      return varName === selectedSize || short === selectedSize;
+    });
+    return v && v.stock !== undefined ? Number(v.stock) : defaultStock;
+  };
+
+  // Cart operations with stock limit protection
   const addToCart = (product, selectedSize = "M", quantity = 1) => {
     setCart((prevCart) => {
       const cartItemId = `${product.id}-${selectedSize}`;
       const existingIndex = prevCart.findIndex((item) => item.cartItemId === cartItemId);
 
+      // Determine stock limit for the specific variant
+      const maxStock = product.stock !== undefined
+        ? Number(product.stock)
+        : matchVariantStock(product.variants, selectedSize, 99);
+
       if (existingIndex > -1) {
         const updated = [...prevCart];
-        updated[existingIndex].quantity += quantity;
+        const currentQty = updated[existingIndex].quantity;
+        const newTotalQty = maxStock > 0 ? Math.min(maxStock, currentQty + quantity) : (currentQty + quantity);
+        updated[existingIndex].quantity = newTotalQty;
+        updated[existingIndex].stock = maxStock;
         return updated;
       } else {
+        const initialQty = maxStock > 0 ? Math.min(maxStock, quantity) : quantity;
         return [
           ...prevCart,
           {
             cartItemId,
             product,
             selectedSize,
-            quantity,
+            quantity: initialQty,
             price: product.price,
+            stock: maxStock,
           },
         ];
       }
@@ -289,9 +310,16 @@ export function ShopProvider({ children }) {
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.cartItemId === cartItemId ? { ...item, quantity: newQty } : item
-      )
+      prevCart.map((item) => {
+        if (item.cartItemId !== cartItemId) return item;
+
+        let maxStock = item.stock !== undefined
+          ? Number(item.stock)
+          : matchVariantStock(item.product?.variants, item.selectedSize, 99);
+
+        const safeQty = maxStock > 0 ? Math.min(maxStock, newQty) : newQty;
+        return { ...item, quantity: safeQty, stock: maxStock };
+      })
     );
   };
 
