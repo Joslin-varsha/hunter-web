@@ -323,14 +323,39 @@ export async function fetchCities(stateId) {
 
 /**
  * Fetch Order Payment Methods List
+ * Endpoint: POST /customer/order/payment-methods
+ * Payload: { "product_list": [ { "product_id": 21, "qty": 10 } ] }
  */
-export async function fetchPaymentMethods() {
+export async function fetchPaymentMethods(productList = []) {
   try {
+    let list = [];
+    if (Array.isArray(productList)) {
+      list = productList
+        .filter((item) => item && (item.product_id || item.id || item.product?.id))
+        .map((item) => ({
+          product_id: Number(item.product_id || item.id || item.product?.id),
+          qty: Number(item.qty || item.quantity || 1),
+        }));
+    } else if (productList && Array.isArray(productList.product_list)) {
+      list = productList.product_list
+        .filter((item) => item && (item.product_id || item.id || item.product?.id))
+        .map((item) => ({
+          product_id: Number(item.product_id || item.id || item.product?.id),
+          qty: Number(item.qty || item.quantity || 1),
+        }));
+    }
+
+    const payload = {
+      product_list: list,
+    };
+
     const response = await fetch(`${BASE_URL}/customer/order/payment-methods`, {
       method: "POST",
       headers: {
+        "Content-Type": "application/json",
         "Accept": "application/json",
       },
+      body: JSON.stringify(payload),
     });
 
     const data = await safeJsonParse(response);
@@ -339,9 +364,22 @@ export async function fetchPaymentMethods() {
     console.error("Fetch Payment Methods Error:", error);
     return {
       status: "error",
+      total_weight: 0,
+      delivery_price: 130,
+      advance_amount: 0,
       payment_methods: [
-        { name: "Razorpay", label: "Prepaid", advance_amount: 0 },
-        { name: "Advance_Pay", label: "Advance Pay [Now You will pay Shipping Amount.Balance will pay on Delivery]", advance_amount: 150 },
+        {
+          name: "Razorpay",
+          label: "Prepaid",
+          advance_amount: 0,
+          delivery_price: 130,
+        },
+        {
+          name: "Advance_Pay",
+          label: "Advance Pay [Now You will pay Shipping Amount.Balance will pay on Delivery]",
+          advance_amount: 200,
+          delivery_price: 200,
+        },
       ],
     };
   }

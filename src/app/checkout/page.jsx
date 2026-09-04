@@ -95,8 +95,9 @@ function CheckoutPageContent() {
   const [billingCitiesList, setBillingCitiesList] = useState([]);
   const [shippingCitiesList, setShippingCitiesList] = useState([]);
   const [paymentMethodsList, setPaymentMethodsList] = useState([]);
+  const [paymentMethodsData, setPaymentMethodsData] = useState(null);
 
-  // Load Countries, States for default country, and Payment Methods
+  // Load Countries and States for default country
   useEffect(() => {
     async function initCheckoutData() {
       // 1. Fetch Countries
@@ -113,25 +114,6 @@ function CheckoutPageContent() {
           setStatesList(stateRes.states);
         }
       }
-
-      // 3. Fetch Payment Methods (Excluding Cash on Delivery)
-      const pmRes = await fetchPaymentMethods();
-      let pms = [];
-      if (pmRes?.status === "success" && Array.isArray(pmRes.payment_methods) && pmRes.payment_methods.length > 0) {
-        pms = pmRes.payment_methods.filter(
-          (p) => p.name !== "COD" && p.name !== "Cash on Delivery" && !p.name?.toLowerCase().includes("cash on delivery")
-        );
-      }
-      
-      if (pms.length === 0) {
-        pms = [
-          { name: "Razorpay", label: "Prepaid (Razorpay / UPI / Cards / NetBanking)", advance_amount: 0 },
-          { name: "Advance_Pay", label: "Advance Pay", advance_amount: 150 },
-        ];
-      }
-
-      setPaymentMethodsList(pms);
-      setPaymentMethod(pms[0]?.name || "Razorpay");
     }
     initCheckoutData();
   }, []);
@@ -213,7 +195,8 @@ function CheckoutPageContent() {
 
   // Active payment method details
   const activePaymentObj = paymentMethodsList.find((pm) => pm.name === paymentMethod);
-  const advanceAmount = activePaymentObj?.advance_amount || 0;
+  const advanceAmount = Number(activePaymentObj?.advance_amount) || 0;
+  const deliveryPrice = Number(activePaymentObj?.delivery_price) || 0;
 
   // Coupon State
   const [couponCode, setCouponCode] = useState("");
@@ -259,13 +242,84 @@ function CheckoutPageContent() {
         ]
       : cart;
 
+  // Fetch payment methods with product_list payload
+  useEffect(() => {
+    async function loadPaymentMethods() {
+      if (!checkoutItems || checkoutItems.length === 0) {
+        const fallback = [
+          {
+            name: "Razorpay",
+            label: "Prepaid",
+            advance_amount: 0,
+            delivery_price: 130,
+          },
+          {
+            name: "Advance_Pay",
+            label: "Advance Pay [Now You will pay Shipping Amount.Balance will pay on Delivery]",
+            advance_amount: 200,
+            delivery_price: 200,
+          },
+        ];
+        setPaymentMethodsList(fallback);
+        setPaymentMethod((prev) => prev || "Razorpay");
+        return;
+      }
+
+      const productListPayload = checkoutItems.map((item) => ({
+        product_id: Number(item.product?.id || item.id || item.product_id || buyNowId || 1),
+        qty: Number(item.quantity || item.qty || 1),
+      }));
+
+      const pmRes = await fetchPaymentMethods(productListPayload);
+      let pms = [];
+      if (pmRes?.status === "success" && Array.isArray(pmRes.payment_methods) && pmRes.payment_methods.length > 0) {
+        setPaymentMethodsData(pmRes);
+        pms = pmRes.payment_methods.filter(
+          (p) => p.name !== "COD" && p.name !== "Cash on Delivery" && !p.name?.toLowerCase().includes("cash on delivery")
+        );
+      }
+
+      if (pms.length === 0) {
+        pms = [
+          {
+            name: "Razorpay",
+            label: "Prepaid",
+            advance_amount: 0,
+            delivery_price: 130,
+          },
+          {
+            name: "Advance_Pay",
+            label: "Advance Pay [Now You will pay Shipping Amount.Balance will pay on Delivery]",
+            advance_amount: 200,
+            delivery_price: 200,
+          },
+        ];
+      }
+
+      setPaymentMethodsList(pms);
+      setPaymentMethod((prev) => {
+        const found = pms.some((m) => m.name === prev);
+        return found ? prev : (pms[0]?.name || "Razorpay");
+      });
+    }
+
+    loadPaymentMethods();
+  }, [
+    isBuyNow,
+    buyNowId,
+    buyNowQty,
+    cart.length,
+    JSON.stringify(cart.map((c) => ({ id: c.product?.id || c.id, qty: c.quantity }))),
+  ]);
+
   // Price Calculation
   const subtotal = checkoutItems.reduce(
     (total, item) => total + (item.price || item.product?.price || 950) * item.quantity,
     0
   );
   const tax = 0;
-  const grandTotal = Math.max(0, subtotal - couponDiscount + tax);
+  const shippingCharge = paymentMethod === "Razorpay" ? deliveryPrice : 0;
+  const grandTotal = Math.max(0, subtotal - couponDiscount + tax + shippingCharge);
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -273,6 +327,7 @@ function CheckoutPageContent() {
     setOrderApiError("");
 
     const activeShipping = shipToDifferentAddress ? shippingAddress : billingAddress;
+    const isAdvancePay = paymentMethod === "Advance_Pay" || paymentMethod.toLowerCase().includes("advance");
 
     // Asynchronously resolve real database variant_id for each cart item
     const resolvedProductList = await Promise.all(
@@ -330,11 +385,18 @@ function CheckoutPageContent() {
       delivery_id: 1,
       delivery_comment: "",
       additional_note: "",
+      advance_amount: advanceAmount,
+      advance_price: advanceAmount,
+      delivery_price: deliveryPrice,
+      total_weight: paymentMethodsData?.total_weight || 0,
       cartlist: {
-        total_final_price: grandTotal,
+        total_final_price: isAdvancePay ? (subtotal - couponDiscount + tax + deliveryPrice) : grandTotal,
         total_sub_price: subtotal,
         tax_price: tax,
-        shipping_price: 0,
+        shipping_price: isAdvancePay ? advanceAmount : shippingCharge,
+        advance_amount: advanceAmount,
+        advance_price: advanceAmount,
+        delivery_price: deliveryPrice,
         coupon_price: couponDiscount,
         coupon_code: couponCode || "",
         coupon_info: null,
@@ -376,7 +438,12 @@ function CheckoutPageContent() {
         // Open Razorpay JS popup modal directly on current page
         const scriptLoaded = await loadRazorpayScript();
         if (scriptLoaded && typeof window !== "undefined" && window.Razorpay && (responseData.razorpay_order_id || rzpKey)) {
-          const amountInPaise = Math.round((Number(responseData.final_price) || grandTotal) * 100);
+          // Dynamic payment amount: if advance pay, charge the dynamic advanceAmount (e.g. 250); otherwise grand total
+          const targetPayAmount = isAdvancePay
+            ? (advanceAmount || Number(responseData.advance_amount) || Number(responseData.final_price) || 250)
+            : (Number(responseData.final_price) || grandTotal);
+
+          const amountInPaise = Math.round(targetPayAmount * 100);
 
           const options = {
             key: rzpKey || "rzp_live_RqDb8X8JWRzxdI",
@@ -384,7 +451,7 @@ function CheckoutPageContent() {
             currency: "INR",
             name: "Hunter Mens Wear",
             description: `Order #${finalOrderId}`,
-            order_id: responseData.razorpay_order_id,
+            ...(isAdvancePay ? {} : (responseData.razorpay_order_id ? { order_id: responseData.razorpay_order_id } : {})),
             prefill: {
               name: `${customerInfo.firstName} ${customerInfo.lastName}`.trim(),
               email: customerInfo.email,
@@ -1011,7 +1078,7 @@ function CheckoutPageContent() {
                   )}
                 </div>
 
-                {/* Subtotal, Coupon, Tax, Total Rows */}
+                {/* Subtotal, Coupon, Tax, Shipping, Total Rows */}
                 <div className="space-y-2.5 pt-3 border-t border-gray-200 text-xs text-gray-700 font-medium">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
@@ -1030,13 +1097,21 @@ function CheckoutPageContent() {
                     <span className="font-extrabold text-black">₹0,00</span>
                   </div>
 
+                  {/* If Razorpay / Prepaid: show Shipping Amount */}
+                  {paymentMethod === "Razorpay" && deliveryPrice > 0 && (
+                    <div className="flex justify-between">
+                      <span>Shipping Amount</span>
+                      <span className="font-extrabold text-black">₹{deliveryPrice.toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between pt-2.5 border-t border-gray-200 text-sm sm:text-base font-black text-black">
                     <span>Total</span>
                     <span>₹{grandTotal.toLocaleString("en-IN")}</span>
                   </div>
 
-                  {/* To Pay Advance Amount Line (Only if selected payment method has advance_amount > 0) */}
-                  {advanceAmount > 0 && (
+                  {/* If Advance Pay: show To Pay Advance Amount */}
+                  {paymentMethod === "Advance_Pay" && advanceAmount > 0 && (
                     <div className="pt-2">
                       <p className="text-xs sm:text-sm font-black text-black">
                         To Pay Advance Amount ₹{advanceAmount}
@@ -1052,13 +1127,6 @@ function CheckoutPageContent() {
                     <span className="flex-1 leading-snug">{orderApiError}</span>
                   </div>
                 )}
-
-                {/* Shipping Charges Notice Note Box */}
-                <div className="bg-red-50 border border-red-200/90 rounded-xl px-3 py-2 text-center">
-                  <p className="text-[10px] sm:text-[11px] text-red-600 font-bold leading-tight">
-                    <span className="font-black uppercase">Note:</span> Shipping charges will be applied at the time of payment.
-                  </p>
-                </div>
 
                 {/* Complete Order Button */}
                 <button
