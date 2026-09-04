@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 const slides = [
   {
     id: 1,
     image: "/images/banner.jpg",
-    imageMobile: "/images/banner11.png", // The 5-model streetwear photo from your screenshot
+    imageMobile: "/images/banner11.png",
   },
   {
     id: 2,
@@ -25,35 +24,21 @@ const slides = [
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const marqueeItems = Array(12).fill("HUNTER STREETWEAR • PREMIUM URBAN ESSENTIALS • EXCLUSIVE DROPS • 100% QUALITY GUARANTEED");
+  const marqueeItems = Array(12).fill("YOUR NEXT FIT IS SOMEWHERE HERE • BE READY TO HUNT ");
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  }, []);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  }, []);
-
-  // Auto-play carousel every 5 seconds
+  // Auto-play carousel smoothly every 4 seconds
   useEffect(() => {
-    if (isPaused) return;
     const timer = setInterval(() => {
-      nextSlide();
-    }, 5000);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
     return () => clearInterval(timer);
-  }, [nextSlide, isPaused]);
+  }, []);
 
   return (
     <section className="w-full pt-0 pb-0 overflow-hidden">
       {/* Full-Width Edge-to-Edge Hero Banner */}
       <div className="w-full">
-        <div
-          className="relative w-full aspect-[4/3] sm:aspect-auto sm:h-[calc(100vh-132px)] sm:min-h-[480px] sm:max-h-[780px] overflow-hidden bg-gray-900 group"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
+        <div className="relative w-full aspect-[4/3] sm:aspect-auto sm:h-[calc(100vh-132px)] sm:min-h-[480px] sm:max-h-[780px] overflow-hidden bg-gray-900 group">
           {/* Background Image Slides */}
           {slides.map((slide, index) => (
             <div
@@ -72,7 +57,7 @@ export default function Hero() {
                 className="hidden sm:block object-cover object-center animate-hero-zoom"
               />
 
-              {/* Mobile View Image (Natural 4:3 Widescreen Aspect Ratio matching screenshot) */}
+              {/* Mobile View Image (Natural 4:3 Widescreen Aspect Ratio) */}
               <Image
                 src={slide.imageMobile || slide.image}
                 alt={`Hero Slide Mobile ${slide.id}`}
@@ -84,39 +69,13 @@ export default function Hero() {
             </div>
           ))}
 
-          {/* Shop Now Overlay Glass Pill Button */}
+          {/* Overlay Glass Pill Button (Centered) */}
           <Link
             href="/products"
-            className="absolute bottom-3 left-3 sm:bottom-8 sm:left-10 z-30 inline-flex items-center gap-1 bg-black/90 hover:bg-white text-white hover:text-black text-[11px] sm:text-sm font-black uppercase tracking-wider px-3 sm:px-6 py-2 sm:py-3 rounded-full border border-white/40 shadow-2xl backdrop-blur-md transition-all active:scale-95"
+            className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-1.5 bg-black/90 hover:bg-white text-white hover:text-black text-[11px] sm:text-sm font-black uppercase tracking-wider px-4 sm:px-8 py-2.5 sm:py-3.5 rounded-full border border-white/40 shadow-2xl backdrop-blur-md transition-all active:scale-95 whitespace-nowrap"
           >
-            <span>Shop Now</span>
+            <span>Explore Collection</span>
           </Link>
-
-          {/* Controls: Arrow Navigation & Counter */}
-          <div className="absolute bottom-3 sm:bottom-8 right-3 sm:right-10 z-30 flex items-center gap-1.5 sm:gap-3">
-            {/* Slide Counter */}
-            <span className="text-white/90 bg-black/40 backdrop-blur-md px-2 sm:px-2.5 py-1 rounded-full font-mono text-[10px] sm:text-sm font-semibold tracking-widest border border-white/10">
-              0{currentSlide + 1} / 0{slides.length}
-            </span>
-
-            {/* Prev Button */}
-            <button
-              onClick={prevSlide}
-              className="p-1.5 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
-              aria-label="Previous Slide"
-            >
-              <FiChevronLeft className="w-3.5 h-3.5 sm:w-5 sm:h-5 stroke-[2.5]" />
-            </button>
-
-            {/* Next Button */}
-            <button
-              onClick={nextSlide}
-              className="p-1.5 sm:p-3.5 rounded-full bg-black/40 hover:bg-white hover:text-black border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg"
-              aria-label="Next Slide"
-            >
-              <FiChevronRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 stroke-[2.5]" />
-            </button>
-          </div>
         </div>
       </div>
 

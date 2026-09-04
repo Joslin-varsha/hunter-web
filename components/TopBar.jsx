@@ -1,6 +1,6 @@
 export default function TopBar() {
   const items = Array(8).fill(
-    "HUNTER MEN'S WEAR • NEW STREETWEAR DROPS LIVE NOW • PREMIUM QUALITY • EXPRESS SHIPPING ALL OVER INDIA"
+    "HUNT YOUR WEAR • OWN YOUR STREET • WEAR IT DIFFERENT• HUNTER CLOTHING"
   );
 
   return (
